@@ -3,6 +3,7 @@
 mod app;
 mod orca;
 mod ai;
+mod fish;
 
 fn main() {
     app::app();

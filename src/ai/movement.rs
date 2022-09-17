@@ -40,6 +40,8 @@ pub struct Movement {
     pub wander_angle: u32,
     /// optional target to move towards
     pub target: Option<Vec2>,
+    /// Speed scale
+    pub speed_scale: f32,
 }
 
 impl Default for Movement {
@@ -52,6 +54,7 @@ impl Default for Movement {
             tracking: 1.,
             wander_angle: 10,
             target: None,
+            speed_scale: 1.,
         }
     }
 }
@@ -93,6 +96,10 @@ fn pod_member_sight(mut query: Query<(Entity, &Orca, &mut Transform, &mut Sight,
     }
 }
 
+fn prey_sight(
+) {
+}
+
 fn boid_ai(time: Res<Time>, mut query: Query<(Entity, &mut Transform, &Sight, &Movement, &mut RigidBody)>) {
     let mut force_updates: HashMap<Entity, Vec2> = HashMap::new();
     for (entity, trans, sight, movement, rb) in query.iter() {
@@ -112,6 +119,7 @@ fn boid_ai(time: Res<Time>, mut query: Query<(Entity, &mut Transform, &Sight, &M
         use rand::{thread_rng, Rng};
         use std::f32::consts::PI;
 
+        /*
         if rb.velocity.length() != 0. {
             let rand: i32 = thread_rng().gen_range(0..(movement.wander_angle as i32));
             let angle_deviation = ((rand - 180) as f32) * PI / 180.;
@@ -119,13 +127,14 @@ fn boid_ai(time: Res<Time>, mut query: Query<(Entity, &mut Transform, &Sight, &M
             let random_force = Mat2::from_angle(angle_deviation + forward) * Vec2::X;
             cur_force += random_force * movement.randomess;
         }
+        */
 
         // alignment (attempt to face same direction as neighbours)
         let avg_heading = query
             .iter_many(neighbours)
             .fold(Vec2::ZERO, |acc, (_, _, _, _, rb)| acc + rb.velocity)
             / neighbours.len() as f32;
-        cur_force += avg_heading * movement.alignment;
+        cur_force += (avg_heading-rb.velocity.normalize()) * movement.alignment;
 
         // cohesion
         let avg_position = query
@@ -157,7 +166,7 @@ fn boid_ai(time: Res<Time>, mut query: Query<(Entity, &mut Transform, &Sight, &M
     // update all the forces
     for (e, _, _, ai, mut rb) in query.iter_mut() {
         if let Some(force) = force_updates.get(&e) {
-            rb.force += *force * time.delta().as_micros() as f32 / 1_000_000.0;
+            rb.force += *force * ai.speed_scale * time.delta().as_micros() as f32 / 1_000_000.0;
         }
     }
 }
