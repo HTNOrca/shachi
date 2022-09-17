@@ -604,6 +604,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_mod_picking"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db42ac84b1409452bbfa696d9071b9a7a2505c73620c939b758b5bf23573976a"
+dependencies = [
+ "bevy",
+ "bevy_mod_raycast",
+]
+
+[[package]]
+name = "bevy_mod_raycast"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7aead49a20f5e694f4fb59c7312f9a1813b65a2a0ac2c385d53d40f25cae896f"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "bevy_pancam"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1467,6 +1486,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9852635589dc9f9ea1b6fe9f05b50ef208c85c834a562f0c6abb1c475736ec2b"
 dependencies = [
  "cfg-if 1.0.0",
+]
+
+[[package]]
+name = "enum_string"
+version = "0.1.0"
+source = "git+https://github.com/MrPicklePinosaur/pino_utils#c7678f2d7e8bc0b7a8b435e37ffe099df664a58d"
+dependencies = [
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -2759,6 +2787,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0a7ae3ac2f1173085d398531c705756c94a4c56843785df85a60c1a0afac116"
 
 [[package]]
+name = "pino_utils"
+version = "0.1.0"
+source = "git+https://github.com/MrPicklePinosaur/pino_utils#c7678f2d7e8bc0b7a8b435e37ffe099df664a58d"
+dependencies = [
+ "enum_string",
+]
+
+[[package]]
 name = "pkg-config"
 version = "0.3.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2996,10 +3032,12 @@ dependencies = [
  "bevy",
  "bevy_bobs",
  "bevy_egui",
+ "bevy_mod_picking",
  "bevy_pancam",
  "bevy_prototype_lyon",
  "big-brain",
  "iyes_loopless",
+ "pino_utils",
  "rand",
 ]
 
