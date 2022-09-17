@@ -39,12 +39,12 @@ pub struct Movement {
 impl Default for Movement {
     fn default() -> Self {
         Self {
-            coherence: 0.,
-            alignment: 0.,
-            seperation: 0.,
-            randomess: 0.,
-            tracking: 0.,
-            wander_angle: 0,
+            coherence: 1.,
+            alignment: 1.,
+            seperation: 1.,
+            randomess: 1.,
+            tracking: 1.,
+            wander_angle: 10,
             target: None,
         }
     }
@@ -58,7 +58,7 @@ impl Plugin for MovementPlugin {
     }
 }
 
-pub fn boid_ai_system(mut query: Query<(Entity, &mut Transform, &Sight, &Movement, &mut RigidBody)>) {
+pub fn boid_ai_system(time: Res<Time>, mut query: Query<(Entity, &mut Transform, &Sight, &Movement, &mut RigidBody)>) {
     let mut force_updates: HashMap<Entity, Vec2> = HashMap::new();
     for (self_entity, self_trans, self_sight, self_ai, self_rb) in query.iter() {
         // fetch all boids in viewing range
@@ -85,19 +85,20 @@ pub fn boid_ai_system(mut query: Query<(Entity, &mut Transform, &Sight, &Movemen
         use rand::{thread_rng, Rng};
         use std::f32::consts::PI;
 
-        let rand: i32 = thread_rng().gen_range(0..(self_ai.wander_angle as i32));
-        let angle_deviation = ((rand - 180) as f32) * PI / 180.;
-        let forward = self_rb.velocity.angle_between(Vec2::X);
-        let random_force =
-            (Mat2::from_angle(angle_deviation + forward) * Vec2::X) * self_ai.randomess;
-        cur_force += random_force;
+        if self_rb.velocity.length() != 0. {
+            let rand: i32 = thread_rng().gen_range(0..(self_ai.wander_angle as i32));
+            let angle_deviation = ((rand - 180) as f32) * PI / 180.;
+            let forward = self_rb.velocity.angle_between(Vec2::X);
+            let random_force = Mat2::from_angle(angle_deviation + forward) * Vec2::X;
+            cur_force += random_force * self_ai.randomess;
+        }
 
         // alignment (attempt to face same direction as neighbours)
         let avg_heading = neighbours
             .iter()
             .fold(Vec2::ZERO, |acc, (_, _, rb)| acc + rb.velocity)
             / neighbours.len() as f32;
-        cur_force += avg_heading * self_ai.alignment + cur_force;
+        cur_force += avg_heading * self_ai.alignment;
 
         // cohesion
         let avg_position = neighbours
@@ -114,19 +115,21 @@ pub fn boid_ai_system(mut query: Query<(Entity, &mut Transform, &Sight, &Movemen
         });
         cur_force += seperation_force * self_ai.seperation;
 
+        /*
         // target
         if let Some(target) = self_ai.target {
             let target_force = target - self_trans.translation.truncate();
             cur_force += target_force * self_ai.tracking;
         }
 
+        */
         force_updates.insert(self_entity, cur_force);
     }
 
     // update all the forces
     for (e, _, _, ai, mut rb) in query.iter_mut() {
         if let Some(force) = force_updates.get(&e) {
-            rb.force += *force * 5.;
+            rb.force += *force * time.delta().as_micros() as f32 / 1_000_000.0;
         }
     }
 }

@@ -21,7 +21,8 @@ pub fn app() {
         .insert_resource(window_descriptor);
 
     app.add_plugins(DefaultPlugins)
-        .add_plugin(AIPlugin);
+        .add_plugin(AIPlugin)
+        .add_plugin(PhysicsPlugin);
 
     app.add_startup_system(spawn_camera)
         .add_startup_system(debug);
@@ -33,7 +34,7 @@ pub fn app() {
 fn spawn_camera(mut cmd: Commands) {
     cmd.spawn_bundle(Camera2dBundle {
         projection: OrthographicProjection {
-            scale: 0.2,
+            scale: 0.5,
             ..default()
         },
         ..default()
@@ -41,30 +42,47 @@ fn spawn_camera(mut cmd: Commands) {
 }
 
 fn debug(mut cmd: Commands) {
+    use rand::{thread_rng, Rng};
 
-    let id = cmd.spawn().id();
+    for i in 0..100 {
 
-    cmd.entity(id)
-        .insert(Orca {
-            gender: Gender::Male,
-            age: 20,
-            mass: 3000.,
-            orca_type: Type::Resident,
-        })
-        .insert(Hunger::default())
-        .insert_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::RED,
+        let id = cmd.spawn().id();
+
+        let spawn_pos = Vec2::new(thread_rng().gen_range(-100..100) as f32, thread_rng().gen_range(-100..100) as f32);
+
+        cmd.entity(id)
+            .insert(Orca {
+                gender: Gender::Male,
+                age: 20,
+                mass: 3000.,
+                orca_type: Type::Resident,
+            })
+            .insert(Hunger::default())
+            .insert_bundle(SpriteBundle {
+                sprite: Sprite {
+                    color: Color::RED,
+                    ..default()
+                },
+                transform: Transform::from_translation(spawn_pos.extend(0.)),
                 ..default()
-            },
-            transform: Transform::from_translation(Vec3::ZERO),
-            ..default()
-        })
-        .insert(Sight::default())
-        .insert(Movement::default())
-        .insert(RigidBody {
-            mass: 3000.,
-            ..default()
-        });
+            })
+            .insert(Sight {
+                view_range: 50.,
+                ..default()
+            })
+            .insert(Movement {
+                coherence: 1.,
+                alignment: 1.,
+                seperation: 1.,
+                randomess: 1.0,
+                tracking: 0.,
+                wander_angle: 10,
+                target: None,
+            })
+            .insert(RigidBody {
+                max_velocity: Some(10.),
+                ..default()
+            });
 
+    }
 }
