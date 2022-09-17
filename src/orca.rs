@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_bobs::physics_2d::RigidBody;
+use bevy_mod_picking::PickableBundle;
 use bevy_prototype_lyon::prelude::*;
 use big_brain::prelude::*;
+use pino_utils::enum_string;
 
 use crate::ai::{
     hunger::{Hunger, Hungry, Hunt},
@@ -12,11 +14,13 @@ use crate::ai::{
 
 pub type PodId = usize;
 
+#[enum_string]
 pub enum Gender {
     Male,
     Female,
 }
 
+#[enum_string]
 pub enum Type {
     Resident,
     Transient,
@@ -57,7 +61,12 @@ impl Plugin for OrcaPlugin {
     }
 }
 
-fn debug(mut cmd: Commands, mut pod_pool: ResMut<PodPool>) {
+fn debug(
+    mut cmd: Commands,
+    mut pod_pool: ResMut<PodPool>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
     use std::f32::consts::PI;
 
     use rand::{thread_rng, Rng};
@@ -98,17 +107,17 @@ fn debug(mut cmd: Commands, mut pod_pool: ResMut<PodPool>) {
                     pod_id: Some(pod_id),
                 })
                 .insert(Hunger::default())
-                .insert_bundle(GeometryBuilder::build_as(
-                    &RegularPolygon {
-                        sides: 3,
-                        ..default()
-                    },
-                    DrawMode::Outlined {
-                        fill_mode: FillMode::color(pod_color),
-                        outline_mode: StrokeMode::new(Color::BLACK, 0.1),
-                    },
-                    Transform::from_translation((pod_spawn_pos + spawn_offset).extend(0.)),
-                ))
+                // .insert_bundle(GeometryBuilder::build_as(
+                //     &RegularPolygon {
+                //         sides: 3,
+                //         ..default()
+                //     },
+                //     DrawMode::Outlined {
+                //         fill_mode: FillMode::color(pod_color),
+                //         outline_mode: StrokeMode::new(Color::BLACK, 0.1),
+                //     },
+                //     Transform::from_translation((pod_spawn_pos + spawn_offset).extend(0.)),
+                // ))
                 .insert(Sight::new(20., 90.))
                 .insert(Movement {
                     coherence: 1.,
@@ -130,7 +139,16 @@ fn debug(mut cmd: Commands, mut pod_pool: ResMut<PodPool>) {
                     Thinker::build()
                         .picker(FirstToScore { threshold: 0.8 })
                         .when(Hungry, Hunt),
-                );
+                )
+                .insert_bundle(MaterialMesh2dBundle {
+                    mesh: meshes.add(Mesh::from(shape::Circle::new(2.))).into(),
+                    transform: Transform::from_translation(
+                        (pod_spawn_pos + spawn_offset).extend(0.),
+                    ),
+                    material: materials.add(ColorMaterial::from(Color::BLUE)),
+                    ..default()
+                })
+                .insert_bundle(PickableBundle::default());
         }
 
         pod_pool.insert(pod_id as usize, pod);

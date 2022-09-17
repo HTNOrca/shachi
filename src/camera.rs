@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_mod_picking::PickingCameraBundle;
 use bevy_pancam::{PanCam, PanCamPlugin};
 
 pub struct CameraPlugin;
@@ -18,5 +19,6 @@ fn spawn_camera(mut cmd: Commands) {
         },
         ..default()
     })
-    .insert(PanCam::default());
+    .insert(PanCam::default())
+    .insert_bundle(PickingCameraBundle::default());
 }
