@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, f32::consts::PI};
 
 use bevy::prelude::*;
 use bevy_bobs::physics_2d::*;
@@ -126,7 +126,6 @@ fn boid_ai(
 
         use rand::{thread_rng, Rng};
 
-        /*
         if rb.velocity.length() != 0. {
             let rand: i32 = thread_rng().gen_range(0..(movement.wander_angle as i32));
             let angle_deviation = ((rand - 180) as f32) * PI / 180.;
@@ -134,7 +133,6 @@ fn boid_ai(
             let random_force = Mat2::from_angle(angle_deviation + forward) * Vec2::X;
             cur_force += random_force * movement.randomess;
         }
-        */
 
         // alignment (attempt to face same direction as neighbours)
         let avg_heading = query
@@ -178,7 +176,14 @@ fn boid_ai(
     // update all the forces
     for (e, _, _, ai, mut rb) in query.iter_mut() {
         if let Some(force) = force_updates.get(&e) {
-            rb.force += *force * ai.speed_scale * time.delta().as_micros() as f32 / 1_000_000.0;
+            rb.force +=
+                *force * 1000. * ai.speed_scale * time.delta().as_micros() as f32 / 1_000_000.0;
         }
+    }
+
+    // rotate boid to face direction of travel
+    for (e, mut trans, _, _, rb) in query.iter_mut() {
+        let facing = rb.velocity.angle_between(Vec2::X);
+        trans.rotation = Quat::from_rotation_z(facing);
     }
 }

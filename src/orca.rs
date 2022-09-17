@@ -91,33 +91,24 @@ fn debug(
             pod.members.push(id);
 
             let spawn_offset = Vec2::new(
-                thread_rng().gen_range(-20..20) as f32,
-                thread_rng().gen_range(-20..20) as f32,
+                thread_rng().gen_range(-100..100) as f32,
+                thread_rng().gen_range(-100..100) as f32,
             );
 
             let rand_angle = thread_rng().gen_range(0..(360 as i32)) as f32 * PI / 180.;
             let velocity = Mat2::from_angle(rand_angle) * Vec2::X * 10.;
 
+            let mass = thread_rng().gen_range(2000..3000) as f32;
+
             cmd.entity(id)
                 .insert(Orca {
                     gender: Gender::Male,
                     age: 20,
-                    mass: 3000.,
+                    mass,
                     orca_type: Type::Resident,
                     pod_id: Some(pod_id),
                 })
                 .insert(Hunger::default())
-                // .insert_bundle(GeometryBuilder::build_as(
-                //     &RegularPolygon {
-                //         sides: 3,
-                //         ..default()
-                //     },
-                //     DrawMode::Outlined {
-                //         fill_mode: FillMode::color(pod_color),
-                //         outline_mode: StrokeMode::new(Color::BLACK, 0.1),
-                //     },
-                //     Transform::from_translation((pod_spawn_pos + spawn_offset).extend(0.)),
-                // ))
                 .insert(Sight::new(20., 90.))
                 .insert(Movement {
                     coherence: 1.,
@@ -127,12 +118,13 @@ fn debug(
                     tracking: 0.,
                     wander_angle: 20,
                     target: None,
+                    speed_scale: thread_rng().gen_range(90..110) as f32 / 10.,
                     ..default()
                 })
                 .insert(RigidBody {
                     max_velocity: Some(20.),
                     velocity,
-                    mass: 1.,
+                    mass,
                     ..default()
                 })
                 .insert(
@@ -145,8 +137,21 @@ fn debug(
                     transform: Transform::from_translation(
                         (pod_spawn_pos + spawn_offset).extend(0.),
                     ),
-                    material: materials.add(ColorMaterial::from(Color::BLUE)),
+                    material: materials.add(ColorMaterial::from(Color::NONE)),
                     ..default()
+                })
+                .with_children(|parent| {
+                    parent.spawn().insert_bundle(GeometryBuilder::build_as(
+                        &RegularPolygon {
+                            sides: 3,
+                            ..default()
+                        },
+                        DrawMode::Outlined {
+                            fill_mode: FillMode::color(pod_color),
+                            outline_mode: StrokeMode::new(Color::BLACK, 0.1),
+                        },
+                        Transform::default(),
+                    ));
                 })
                 .insert_bundle(PickableBundle::default());
         }
