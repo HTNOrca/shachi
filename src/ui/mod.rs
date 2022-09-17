@@ -1,5 +1,8 @@
 use bevy::prelude::*;
-use bevy_egui::{EguiPlugin, EguiContext, egui::{Window, SidePanel, containers::panel::Side}};
+use bevy_egui::{
+    egui::{containers::panel::Side, SidePanel, Window},
+    EguiContext, EguiPlugin,
+};
 
 use crate::orca::Orca;
 
@@ -45,9 +48,7 @@ fn update_state(query: Query<&Orca>, mut ui_state: ResMut<UIState>) {
     ui_state.orca_count = query.iter().len() as u32;
 }
 
-fn ui_controller(
-    keys: Res<Input<KeyCode>>, mut ui_state: ResMut<UIState>
-) {
+fn ui_controller(keys: Res<Input<KeyCode>>, mut ui_state: ResMut<UIState>) {
     if keys.just_pressed(KeyCode::Escape) {
         ui_state.show_panel = !ui_state.show_panel;
     }

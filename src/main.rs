@@ -1,15 +1,13 @@
 #![allow(unused)]
 #![allow(dead_code)]
-mod app;
-mod orca;
 mod ai;
-mod fish;
+mod app;
 mod camera;
+mod fish;
+mod orca;
 mod ui;
 
-mod prelude {
-
-}
+mod prelude {}
 
 fn main() {
     app::app();

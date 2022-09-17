@@ -1,7 +1,18 @@
 use bevy::{prelude::*, render::texture::ImageSettings};
 use bevy_bobs::physics_2d::*;
+use bevy_prototype_lyon::prelude::*;
 
-use crate::{orca::{Orca, Gender, Type, OrcaPlugin, Pod, PodPool}, ai::{hunger::Hunger, movement::{Sight, Movement}, AIPlugin}, fish::FishPlugin, camera::CameraPlugin, ui::UIPlugin};
+use crate::{
+    ai::{
+        hunger::Hunger,
+        movement::{Movement, Sight},
+        AIPlugin,
+    },
+    camera::CameraPlugin,
+    fish::FishPlugin,
+    orca::{Gender, Orca, OrcaPlugin, Pod, PodPool, Type},
+    ui::UIPlugin,
+};
 
 pub fn app() {
     let mut window_descriptor = WindowDescriptor {
@@ -21,6 +32,7 @@ pub fn app() {
         .insert_resource(window_descriptor);
 
     app.add_plugins(DefaultPlugins)
+        .add_plugin(ShapePlugin)
         .add_plugin(UIPlugin)
         .add_plugin(AIPlugin)
         .add_plugin(PhysicsPlugin)
@@ -29,5 +41,4 @@ pub fn app() {
         .add_plugin(CameraPlugin);
 
     app.run();
-
 }

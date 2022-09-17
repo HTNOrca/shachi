@@ -1,11 +1,12 @@
 use bevy::prelude::*;
-use bevy_pancam::{PanCamPlugin, PanCam};
+use bevy_pancam::{PanCam, PanCamPlugin};
 
 pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(PanCamPlugin::default()).add_startup_system(spawn_camera);
+        app.add_plugin(PanCamPlugin::default())
+            .add_startup_system(spawn_camera);
     }
 }
 

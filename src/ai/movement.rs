@@ -1,14 +1,15 @@
-use bevy::prelude::*;
-use bevy_bobs::physics_2d::*;
 use std::collections::HashMap;
 
-use crate::orca::{PodPool, Orca};
+use bevy::prelude::*;
+use bevy_bobs::physics_2d::*;
+
+use crate::orca::{Orca, PodPool};
 
 #[derive(Component)]
 pub struct Sight {
     pub view_angle: f32,
     pub view_range: f32,
-    
+
     visible_pod_members: Vec<Entity>,
 }
 
@@ -63,13 +64,14 @@ pub struct MovementPlugin;
 
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_system(pod_member_sight)
-            .add_system(boid_ai);        
+        app.add_system(pod_member_sight).add_system(boid_ai);
     }
 }
 
-fn pod_member_sight(mut query: Query<(Entity, &Orca, &mut Transform, &mut Sight, &Movement)>, pod_pool: Res<PodPool>) {
+fn pod_member_sight(
+    mut query: Query<(Entity, &Orca, &mut Transform, &mut Sight, &Movement)>,
+    pod_pool: Res<PodPool>,
+) {
     let mut updates: HashMap<Entity, Vec<Entity>> = HashMap::new();
     for (self_entity, self_orca, self_trans, self_sight, self_movement) in query.iter() {
         // fetch all boids in viewing range
@@ -78,7 +80,10 @@ fn pod_member_sight(mut query: Query<(Entity, &Orca, &mut Transform, &mut Sight,
             if self_entity == other_entity {
                 continue;
             }
-            if self_orca.pod_id.is_none() || other_orca.pod_id.is_none() || self_orca.pod_id != other_orca.pod_id {
+            if self_orca.pod_id.is_none()
+                || other_orca.pod_id.is_none()
+                || self_orca.pod_id != other_orca.pod_id
+            {
                 continue;
             }
             if self_trans.translation.distance(other_trans.translation) < self_sight.view_range {
@@ -102,24 +107,24 @@ fn pod_member_sight(mut query: Query<(Entity, &Orca, &mut Transform, &mut Sight,
 // ) {
 // }
 
-fn boid_ai(time: Res<Time>, mut query: Query<(Entity, &mut Transform, &Sight, &Movement, &mut RigidBody)>) {
+fn boid_ai(
+    time: Res<Time>,
+    mut query: Query<(Entity, &mut Transform, &Sight, &Movement, &mut RigidBody)>,
+) {
     let mut force_updates: HashMap<Entity, Vec2> = HashMap::new();
     for (entity, trans, sight, movement, rb) in query.iter() {
-
         let neighbours = &sight.visible_pod_members;
 
         if neighbours.len() == 0 {
             continue;
         }
 
-        let mut cur_force = force_updates
-            .get(&entity)
-            .unwrap_or(&Vec2::ZERO)
-            .clone();
+        let mut cur_force = force_updates.get(&entity).unwrap_or(&Vec2::ZERO).clone();
 
         // randomness force
-        use rand::{thread_rng, Rng};
         use std::f32::consts::PI;
+
+        use rand::{thread_rng, Rng};
 
         /*
         if rb.velocity.length() != 0. {
@@ -136,22 +141,27 @@ fn boid_ai(time: Res<Time>, mut query: Query<(Entity, &mut Transform, &Sight, &M
             .iter_many(neighbours)
             .fold(Vec2::ZERO, |acc, (_, _, _, _, rb)| acc + rb.velocity)
             / neighbours.len() as f32;
-        cur_force += (avg_heading-rb.velocity.normalize()) * movement.alignment;
+        cur_force += (avg_heading - rb.velocity.normalize()) * movement.alignment;
 
         // cohesion
         let avg_position = query
             .iter_many(neighbours)
-            .fold(Vec3::ZERO, |acc, (_, trans, _, _, _)| acc + trans.translation)
+            .fold(Vec3::ZERO, |acc, (_, trans, _, _, _)| {
+                acc + trans.translation
+            })
             / neighbours.len() as f32;
         cur_force += (avg_position - trans.translation).truncate() * movement.coherence;
 
         // separation
-        let seperation_force = query.iter_many(neighbours).fold(Vec2::ZERO, |acc, (_, other_trans, _, _, _)| {
-            let dist = trans.translation.distance(other_trans.translation);
-            let dir = (trans.translation - other_trans.translation).truncate();
-            // TODO careful for division by zero
-            acc + dir / dist
-        });
+        let seperation_force =
+            query
+                .iter_many(neighbours)
+                .fold(Vec2::ZERO, |acc, (_, other_trans, _, _, _)| {
+                    let dist = trans.translation.distance(other_trans.translation);
+                    let dir = (trans.translation - other_trans.translation).truncate();
+                    // TODO careful for division by zero
+                    acc + dir / dist
+                });
         cur_force += seperation_force * movement.seperation;
 
         /*

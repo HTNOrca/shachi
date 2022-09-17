@@ -1,6 +1,6 @@
 pub mod hunger;
-pub mod reproduction;
 pub mod movement;
+pub mod reproduction;
 
 use bevy::prelude::*;
 use big_brain::prelude::*;
