@@ -8,8 +8,17 @@ pub struct Sight {
     pub view_range: f32,
 }
 
+impl Default for Sight {
+    fn default() -> Self {
+        Self {
+            view_angle: 90.,
+            view_range: 100.,
+        }
+    }
+}
+
 /// ai with flocking behavior
-#[derive(Component, Default, Clone)]
+#[derive(Component, Clone)]
 pub struct Movement {
     /// weight for coherence
     pub coherence: f32,
@@ -27,6 +36,27 @@ pub struct Movement {
     pub target: Option<Vec2>,
 }
 
+impl Default for Movement {
+    fn default() -> Self {
+        Self {
+            coherence: 0.,
+            alignment: 0.,
+            seperation: 0.,
+            randomess: 0.,
+            tracking: 0.,
+            wander_angle: 0,
+            target: None,
+        }
+    }
+}
+
+pub struct MovementPlugin;
+
+impl Plugin for MovementPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system(boid_ai_system);        
+    }
+}
 
 pub fn boid_ai_system(mut query: Query<(Entity, &mut Transform, &Sight, &Movement, &mut RigidBody)>) {
     let mut force_updates: HashMap<Entity, Vec2> = HashMap::new();

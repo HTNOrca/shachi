@@ -13,11 +13,12 @@ pub enum Type {
 
 #[derive(Component)]
 pub struct Orca {
-    gender: Gender,
-    age: u32,
-    weight: f32,
-    orca_type: Type,
-    speed: f32,
+    pub gender: Gender,
+    /// age in years
+    pub age: u32,
+    /// mass in kg
+    pub mass: f32,
+    pub orca_type: Type,
 }
 
 pub struct OrcaBundle {
