@@ -96,9 +96,11 @@ fn pod_member_sight(mut query: Query<(Entity, &Orca, &mut Transform, &mut Sight,
     }
 }
 
-fn prey_sight(
-) {
-}
+// fn prey_sight(
+//     query: Query<(&Transform, &Sight), With<Orca>>,
+//     prey_query: Query<(Entity, &Transform), With<Fish>>
+// ) {
+// }
 
 fn boid_ai(time: Res<Time>, mut query: Query<(Entity, &mut Transform, &Sight, &Movement, &mut RigidBody)>) {
     let mut force_updates: HashMap<Entity, Vec2> = HashMap::new();
