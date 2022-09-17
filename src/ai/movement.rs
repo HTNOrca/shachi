@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use bevy_bobs::physics_2d::*;
 use std::collections::HashMap;
 
+use crate::orca::{PodPool, Orca};
+
 #[derive(Component)]
 pub struct Sight {
     pub view_angle: f32,
@@ -64,13 +66,16 @@ impl Plugin for MovementPlugin {
     }
 }
 
-fn pod_member_sight(mut query: Query<(Entity, &mut Transform, &mut Sight, &Movement)>) {
+fn pod_member_sight(mut query: Query<(Entity, &Orca, &mut Transform, &mut Sight, &Movement)>, pod_pool: Res<PodPool>) {
     let mut updates: HashMap<Entity, Vec<Entity>> = HashMap::new();
-    for (self_entity, self_trans, self_sight, self_movement) in query.iter() {
+    for (self_entity, self_orca, self_trans, self_sight, self_movement) in query.iter() {
         // fetch all boids in viewing range
         let mut neighbours: Vec<Entity> = vec![];
-        for (other_entity, other_trans, other_sight, other_ai) in query.iter() {
+        for (other_entity, other_orca, other_trans, other_sight, other_ai) in query.iter() {
             if self_entity == other_entity {
+                continue;
+            }
+            if self_orca.pod_id.is_none() || other_orca.pod_id.is_none() || self_orca.pod_id != other_orca.pod_id {
                 continue;
             }
             if self_trans.translation.distance(other_trans.translation) < self_sight.view_range {
@@ -82,7 +87,7 @@ fn pod_member_sight(mut query: Query<(Entity, &mut Transform, &mut Sight, &Movem
     }
 
     for (e, n) in updates.iter() {
-        let (_, _, mut sight, _) = query.get_mut(*e).unwrap();
+        let (_, _, _, mut sight, _) = query.get_mut(*e).unwrap();
         sight.visible_pod_members.clear();
         sight.visible_pod_members.extend(n);
     }

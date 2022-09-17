@@ -25,12 +25,29 @@ pub struct Orca {
     pub pod_id: Option<PodId>,
 }
 
+pub struct OrcaBundle {
+
+}
+
 pub struct Pod {
     pub members: Vec<Entity>,
 }
 
-pub struct PodPool(HashMap<PodId, Pod>);
+impl Pod {
+    pub fn new() -> Self {
+        Self {
+            members: vec![]
+        }
+    }
+}
 
-pub struct OrcaBundle {
+#[derive(Deref, DerefMut)]
+pub struct PodPool(pub HashMap<PodId, Pod>);
 
+pub struct OrcaPlugin;
+
+impl Plugin for OrcaPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(PodPool(HashMap::new())); 
+    }
 }
