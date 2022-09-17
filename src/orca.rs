@@ -1,16 +1,20 @@
+use std::collections::HashMap;
 
 use bevy::prelude::*;
 use bevy_bobs::physics_2d::RigidBody;
+use bevy_prototype_lyon::prelude::*;
 use big_brain::prelude::*;
-use std::collections::HashMap;
 
-use crate::ai::{hunger::{Hunger, Hungry, Hunt}, movement::{Sight, Movement}};
+use crate::ai::{
+    hunger::{Hunger, Hungry, Hunt},
+    movement::{Movement, Sight},
+};
 
 pub type PodId = usize;
 
 pub enum Gender {
     Male,
-    Female
+    Female,
 }
 
 pub enum Type {
@@ -29,9 +33,7 @@ pub struct Orca {
     pub pod_id: Option<PodId>,
 }
 
-pub struct OrcaBundle {
-
-}
+pub struct OrcaBundle {}
 
 pub struct Pod {
     pub members: Vec<Entity>,
@@ -39,9 +41,7 @@ pub struct Pod {
 
 impl Pod {
     pub fn new() -> Self {
-        Self {
-            members: vec![]
-        }
+        Self { members: vec![] }
     }
 }
 
@@ -58,29 +58,33 @@ impl Plugin for OrcaPlugin {
 }
 
 fn debug(mut cmd: Commands, mut pod_pool: ResMut<PodPool>) {
-
-    use rand::{thread_rng, Rng};
     use std::f32::consts::PI;
 
-    for pod_id in 0..10 {
+    use rand::{thread_rng, Rng};
 
+    for pod_id in 0..10 {
         // create a new pod
         let mut pod = Pod::new();
         let pod_color = Color::rgb(
             thread_rng().gen_range(0..100) as f32 / 100.,
             thread_rng().gen_range(0..100) as f32 / 100.,
-            thread_rng().gen_range(0..100) as f32 / 100.
+            thread_rng().gen_range(0..100) as f32 / 100.,
         );
         let pod_size = thread_rng().gen_range(15..30);
 
-        let pod_spawn_pos = Vec2::new(thread_rng().gen_range(-100..100) as f32, thread_rng().gen_range(-100..100) as f32);
+        let pod_spawn_pos = Vec2::new(
+            thread_rng().gen_range(-100..100) as f32,
+            thread_rng().gen_range(-100..100) as f32,
+        );
 
         for j in 0..pod_size {
-
             let id = cmd.spawn().id();
             pod.members.push(id);
 
-            let spawn_offset = Vec2::new(thread_rng().gen_range(-20..20) as f32, thread_rng().gen_range(-20..20) as f32);
+            let spawn_offset = Vec2::new(
+                thread_rng().gen_range(-20..20) as f32,
+                thread_rng().gen_range(-20..20) as f32,
+            );
 
             let rand_angle = thread_rng().gen_range(0..(360 as i32)) as f32 * PI / 180.;
             let velocity = Mat2::from_angle(rand_angle) * Vec2::X * 10.;
@@ -94,14 +98,17 @@ fn debug(mut cmd: Commands, mut pod_pool: ResMut<PodPool>) {
                     pod_id: Some(pod_id),
                 })
                 .insert(Hunger::default())
-                .insert_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        color: pod_color,
+                .insert_bundle(GeometryBuilder::build_as(
+                    &RegularPolygon {
+                        sides: 3,
                         ..default()
                     },
-                    transform: Transform::from_translation((pod_spawn_pos+spawn_offset).extend(0.)),
-                    ..default()
-                })
+                    DrawMode::Outlined {
+                        fill_mode: FillMode::color(pod_color),
+                        outline_mode: StrokeMode::new(Color::BLACK, 0.1),
+                    },
+                    Transform::from_translation((pod_spawn_pos + spawn_offset).extend(0.)),
+                ))
                 .insert(Sight::new(20., 90.))
                 .insert(Movement {
                     coherence: 1.,
@@ -119,14 +126,11 @@ fn debug(mut cmd: Commands, mut pod_pool: ResMut<PodPool>) {
                     mass: 1.,
                     ..default()
                 })
-                .insert(Thinker::build()
-                    .picker(FirstToScore { threshold: 0.8 })
-                    .when(
-                        Hungry,
-                        Hunt,
-                    ),
+                .insert(
+                    Thinker::build()
+                        .picker(FirstToScore { threshold: 0.8 })
+                        .when(Hungry, Hunt),
                 );
-
         }
 
         pod_pool.insert(pod_id as usize, pod);
