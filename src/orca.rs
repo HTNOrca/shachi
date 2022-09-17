@@ -1,5 +1,8 @@
 
 use bevy::prelude::*;
+use std::collections::HashMap;
+
+pub type PodId = usize;
 
 pub enum Gender {
     Male,
@@ -19,7 +22,14 @@ pub struct Orca {
     /// mass in kg
     pub mass: f32,
     pub orca_type: Type,
+    pub pod_id: Option<PodId>,
 }
+
+pub struct Pod {
+    pub members: Vec<Entity>,
+}
+
+pub struct PodPool(HashMap<PodId, Pod>);
 
 pub struct OrcaBundle {
 

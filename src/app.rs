@@ -56,6 +56,7 @@ fn debug(mut cmd: Commands) {
                 age: 20,
                 mass: 3000.,
                 orca_type: Type::Resident,
+                pod_id: None
             })
             .insert(Hunger::default())
             .insert_bundle(SpriteBundle {
@@ -66,10 +67,7 @@ fn debug(mut cmd: Commands) {
                 transform: Transform::from_translation(spawn_pos.extend(0.)),
                 ..default()
             })
-            .insert(Sight {
-                view_range: 50.,
-                ..default()
-            })
+            .insert(Sight::new(50., 90.))
             .insert(Movement {
                 coherence: 1.,
                 alignment: 1.,
