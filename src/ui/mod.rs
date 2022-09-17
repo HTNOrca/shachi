@@ -5,7 +5,7 @@ use bevy_egui::{
 };
 use bevy_mod_picking::events::PickingEvent;
 
-use crate::orca::Orca;
+use crate::{camera::CameraFollow, orca::Orca};
 
 pub struct UIPlugin;
 
@@ -16,7 +16,8 @@ impl Plugin for UIPlugin {
             .add_system(render_ui)
             .add_system(update_state)
             .add_system(ui_controller)
-            .add_system(select_controller);
+            .add_system(select_controller)
+            .add_system(deselect_controller);
     }
 }
 
@@ -68,7 +69,7 @@ fn update_state(query: Query<&Orca>, mut ui_state: ResMut<UIState>) {
 }
 
 fn ui_controller(keys: Res<Input<KeyCode>>, mut ui_state: ResMut<UIState>) {
-    if keys.just_pressed(KeyCode::Escape) {
+    if keys.just_pressed(KeyCode::Tab) {
         ui_state.show_panel = !ui_state.show_panel;
     }
 }
@@ -77,10 +78,17 @@ fn select_controller(mut cmd: Commands, mut events: EventReader<PickingEvent>) {
     for evt in events.iter() {
         match evt {
             PickingEvent::Clicked(entity) => {
-                println!("clicked {:?}", entity);
                 cmd.insert_resource(SelectedOrca(*entity));
+                cmd.insert_resource(CameraFollow(*entity));
             },
             _ => {},
         }
+    }
+}
+
+fn deselect_controller(mut cmd: Commands, keys: Res<Input<KeyCode>>) {
+    if keys.just_pressed(KeyCode::Escape) {
+        cmd.remove_resource::<SelectedOrca>();
+        cmd.remove_resource::<CameraFollow>();
     }
 }

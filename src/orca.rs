@@ -141,7 +141,7 @@ fn debug(
                         .when(Hungry, Hunt),
                 )
                 .insert_bundle(MaterialMesh2dBundle {
-                    mesh: meshes.add(Mesh::from(shape::Circle::new(2.))).into(),
+                    mesh: meshes.add(Mesh::from(shape::Circle::new(3.))).into(),
                     transform: Transform::from_translation(
                         (pod_spawn_pos + spawn_offset).extend(0.),
                     ),
