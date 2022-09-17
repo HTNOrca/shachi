@@ -1,0 +1,11 @@
+[package]
+name = "sakamata"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["MrPicklePinosaur"]
+description = "orca whale simulation software"
+repository = "https://github.com/sakamatawatch/sakamata"
+
+[dependencies]
+bevy = "0.8"
