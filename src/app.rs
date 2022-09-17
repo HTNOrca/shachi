@@ -1,5 +1,7 @@
 use bevy::{prelude::*, render::texture::ImageSettings};
 
+use crate::orca::Orca;
+
 pub fn app() {
     let mut window_descriptor = WindowDescriptor {
         present_mode: bevy::window::PresentMode::Fifo,
@@ -25,6 +27,10 @@ pub fn app() {
 
 }
 
-fn debug() {
+fn debug(mut cmd: Commands) {
+
+    let id = cmd.spawn();
+
+    // spawn.insert(Orca);
 
 }

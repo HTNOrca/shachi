@@ -9,3 +9,9 @@ repository = "https://github.com/sakamatawatch/sakamata"
 
 [dependencies]
 bevy = "0.8"
+big-brain = { version = "0.12" }
+iyes_loopless = { version = "0.7" }
+bevy_bobs = { git = "https://github.com/HalfPixelStudios/bevy_bobs", features = ["physics_2d"] }
+
+rand = { version = "0.8" }
+

@@ -12,3 +12,6 @@ fmt:
 
 lint:
     cargo clippy -- -W clippy::unwrap_used -W clippy::cargo
+
+chk:
+    cargo check
