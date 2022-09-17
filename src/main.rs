@@ -4,6 +4,7 @@ mod app;
 mod orca;
 mod ai;
 mod fish;
+mod camera;
 
 fn main() {
     app::app();

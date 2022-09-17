@@ -12,6 +12,8 @@ bevy = "0.8"
 big-brain = { version = "0.12" }
 iyes_loopless = { version = "0.7" }
 bevy_bobs = { git = "https://github.com/HalfPixelStudios/bevy_bobs", features = ["physics_2d"] }
+bevy_egui = "0.16"
+bevy_pancam = { version = "0.6", features = ["bevy_egui"] }
 
 rand = { version = "0.8" }
 
