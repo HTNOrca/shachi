@@ -1,7 +1,12 @@
 use std::ops::Range;
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle, time::Stopwatch};
-use bevy_bobs::physics_2d::RigidBody;
+use bevy_bobs::{component::lifetime, physics_2d::RigidBody};
+use bevy_hanabi::{
+    ColorOverLifetimeModifier, EffectAsset, Gradient, ParticleEffect, ParticleEffectBundle,
+    ParticleLifetimeModifier, PositionCircleModifier, ShapeDimension, SizeOverLifetimeModifier,
+    Spawner,
+};
 use bevy_mod_picking::PickableBundle;
 use bevy_prototype_lyon::prelude::*;
 use big_brain::prelude::*;
@@ -58,6 +63,7 @@ fn run_sim_orca(
     orca_query: Query<Entity, (With<Orca>, Without<Fish>)>,
     fish_query: Query<Entity, (With<Fish>, Without<Orca>)>,
     mut pod_pool: ResMut<PodPool>,
+    mut effects: ResMut<Assets<EffectAsset>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut events: EventReader<RunSimEvent>,
@@ -110,6 +116,33 @@ fn run_sim_orca(
             };
 
             for j in 0..pod_size {
+                let mut gradient = Gradient::new();
+                gradient.add_key(0.0, Vec4::new(0.16, 0.19, 0.59, 1.));
+
+                let mut size_gradient = Gradient::new();
+                size_gradient.add_key(0.0, Vec2::splat(1.0));
+                size_gradient.add_key(0.5, Vec2::splat(1.0));
+                size_gradient.add_key(1.0, Vec2::splat(0.0));
+                let swim_effect = effects.add(
+                    EffectAsset {
+                        name: "Swim Effect".into(),
+                        capacity: 4096,
+                        spawner: Spawner::rate(10.0.into()),
+                        ..default()
+                    }
+                    .init(PositionCircleModifier {
+                        radius: 0.05,
+                        speed: 0.1.into(),
+                        dimension: ShapeDimension::Surface,
+                        ..default()
+                    })
+                    .init(ParticleLifetimeModifier { lifetime: 1.0 })
+                    .render(ColorOverLifetimeModifier { gradient })
+                    .render(SizeOverLifetimeModifier {
+                        gradient: size_gradient,
+                    }),
+                );
+
                 let id = cmd.spawn().id();
                 pod.members.push(id);
 
@@ -202,6 +235,10 @@ fn run_sim_orca(
                             },
                             Transform::from_scale(Vec3::splat(0.8 + age as f32 / 50.)),
                         ));
+                        parent.spawn_bundle(ParticleEffectBundle {
+                            effect: ParticleEffect::new(swim_effect).with_z_layer_2d(Some(-1.)),
+                            ..default()
+                        });
                     })
                     .insert_bundle(PickableBundle::default());
             }

@@ -1,5 +1,6 @@
 use bevy::{prelude::*, render::texture::ImageSettings};
 use bevy_bobs::physics_2d::*;
+use bevy_hanabi::HanabiPlugin;
 use bevy_mod_picking::*;
 use bevy_prototype_lyon::prelude::*;
 
@@ -28,15 +29,16 @@ pub fn app() {
 
     let mut app = App::new();
 
-    app.insert_resource(ClearColor(Color::rgb(0.5, 0.5, 0.5)))
+    app.insert_resource(ClearColor(Color::rgb(0.26, 0.52, 0.96)))
         .insert_resource(ImageSettings::default_nearest())
-        .insert_resource(Msaa { samples: 1 })
+        .insert_resource(Msaa { samples: 4 })
         .insert_resource(window_descriptor);
 
     app.add_plugins(DefaultPlugins)
         .add_plugin(ShapePlugin)
         .add_plugin(PhysicsPlugin)
-        .add_plugins(DefaultPickingPlugins);
+        .add_plugins(DefaultPickingPlugins)
+        .add_plugin(HanabiPlugin);
     // .add_plugin(DebugEventsPickingPlugin);
 
     app.add_plugin(UIPlugin)

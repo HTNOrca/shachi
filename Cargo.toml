@@ -7,8 +7,13 @@ authors = ["MrPicklePinosaur"]
 description = "orca whale simulation software"
 repository = "https://github.com/sakamatawatch/sakamata"
 
+[features]
+default = ["bevy_sprite", "bevy_ui"]
+bevy_sprite = ["bevy/bevy_sprite", "bevy/bevy_render"]
+bevy_ui = ["bevy/bevy_ui", "bevy/bevy_text", "bevy/bevy_render"]
+
 [dependencies]
-bevy = "0.8"
+bevy = { version = "0.8", default-features = false, features = [ "render", "animation", "bevy_winit", "bevy_gilrs", "png", "hdr", "filesystem_watcher", "x11", "trace"  ] }
 big-brain = { version = "0.12" }
 iyes_loopless = { version = "0.7" }
 bevy_bobs = { git = "https://github.com/HalfPixelStudios/bevy_bobs", features = ["physics_2d"] }
@@ -16,6 +21,7 @@ bevy_egui = "0.16"
 bevy_pancam = { version = "0.6", features = ["bevy_egui"] }
 bevy_prototype_lyon = { version = "0.6" }
 bevy_mod_picking = { version = "0.9" }
+bevy_hanabi = { version = "0.3", default-features = false, features = ["2d"] }
 
 rand = { version = "0.8" }
 pino_utils = { git = "https://github.com/MrPicklePinosaur/pino_utils" }
