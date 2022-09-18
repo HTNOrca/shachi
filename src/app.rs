@@ -12,6 +12,7 @@ use crate::{
     camera::CameraPlugin,
     fish::FishPlugin,
     orca::{Gender, Orca, OrcaPlugin, Pod, PodPool, Type},
+    sim::SimPlugin,
     ui::UIPlugin,
 };
 
@@ -42,7 +43,8 @@ pub fn app() {
         .add_plugin(AIPlugin)
         .add_plugin(OrcaPlugin)
         .add_plugin(FishPlugin)
-        .add_plugin(CameraPlugin);
+        .add_plugin(CameraPlugin)
+        .add_plugin(SimPlugin);
 
     app.run();
 }

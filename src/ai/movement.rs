@@ -55,7 +55,7 @@ impl Default for Movement {
         Self {
             coherence: 1.,
             alignment: 1.,
-            seperation: 1.,
+            seperation: 2.,
             randomess: 1.,
             tracking: 1.,
             wander_angle: 10,

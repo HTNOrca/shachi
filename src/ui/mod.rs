@@ -5,7 +5,12 @@ use bevy_egui::{
 };
 use bevy_mod_picking::events::PickingEvent;
 
-use crate::{ai::hunger::Hunger, camera::CameraFollow, orca::Orca};
+use crate::{
+    ai::hunger::Hunger,
+    camera::CameraFollow,
+    orca::Orca,
+    sim::{RunSimEvent, Simulation},
+};
 
 pub struct UIPlugin;
 
@@ -14,7 +19,6 @@ impl Plugin for UIPlugin {
         app.insert_resource(UIState::default())
             .add_plugin(EguiPlugin)
             .add_system(render_ui)
-            .add_system(update_state)
             .add_system(ui_controller)
             .add_system(select_controller)
             .add_system(deselect_controller);
@@ -25,15 +29,11 @@ pub struct SelectedOrca(Entity);
 
 pub struct UIState {
     show_panel: bool,
-    orca_count: u32,
 }
 
 impl Default for UIState {
     fn default() -> Self {
-        Self {
-            show_panel: true,
-            orca_count: 0,
-        }
+        Self { show_panel: true }
     }
 }
 
@@ -42,17 +42,24 @@ fn render_ui(
     ui_state: Res<UIState>,
     selected: Option<Res<SelectedOrca>>,
     query: Query<(&Orca, &Hunger)>,
+    mut run_sim_writer: EventWriter<RunSimEvent>,
+    sim: Res<Simulation>,
 ) {
     let panel = SidePanel::new(Side::Right, "root").resizable(true);
 
     if ui_state.show_panel {
         panel.show(ctx.ctx_mut(), |ui| {
-            ui.heading("Analyzer");
+            ui.heading("Simulation");
             ui.separator();
-            ui.label(format!("simulated orcas: {}", ui_state.orca_count));
+            ui.label(format!("simulated orcas: {}", sim.orca_count));
+            ui.label(format!("time: {}", sim.time));
+            if ui.button("Restart Simulation").clicked() {
+                run_sim_writer.send(RunSimEvent);
+            }
 
             if let Some(selected) = selected {
                 if let Ok((orca, hunger)) = query.get(selected.0) {
+                    ui.heading("Inspector");
                     ui.separator();
                     ui.label(format!("gender: {}", orca.gender.to_string()));
                     ui.label(format!("age: {}", orca.age));
@@ -63,10 +70,6 @@ fn render_ui(
             }
         });
     }
-}
-
-fn update_state(query: Query<&Orca>, mut ui_state: ResMut<UIState>) {
-    ui_state.orca_count = query.iter().len() as u32;
 }
 
 fn ui_controller(keys: Res<Input<KeyCode>>, mut ui_state: ResMut<UIState>) {
