@@ -63,7 +63,6 @@ fn hunt_action(
                     if sight.visible_fish.len() > 0 {
                         // TODO better way of choosing a fish to hunt
                         let target = sight.visible_fish[0];
-                        println!("found prey {:?}", target);
                         movement.target = Some(target);
 
                         *state = ActionState::Executing
@@ -90,7 +89,9 @@ fn hunt_action(
                         }
 
                         // Give up persuing prey
-                        if trans.translation.distance(prey_trans.translation) > GIVE_UP_RANGE {}
+                        if trans.translation.distance(prey_trans.translation) > GIVE_UP_RANGE {
+                            *state = ActionState::Cancelled;
+                        }
                     } else {
                         *state = ActionState::Cancelled;
                         return;
