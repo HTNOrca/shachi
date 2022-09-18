@@ -173,20 +173,28 @@ fn fish_sight(
             &Sight,
             &mut FishNeighbouring,
             &Movement,
+            &RigidBody,
         ),
         With<Fish>,
     >,
     pod_pool: Res<PodPool>,
 ) {
     let mut updates: HashMap<Entity, Vec<Entity>> = HashMap::new();
-    for (self_entity, self_trans, self_sight, neighbours, self_movement) in query.iter() {
+    for (self_entity, self_trans, self_sight, neighbours, self_movement, self_rb) in query.iter() {
         // fetch all boids in viewing range
         let mut neighbours: Vec<Entity> = vec![];
-        for (other_entity, other_trans, other_sight, _, other_ai) in query.iter() {
+        for (other_entity, other_trans, other_sight, _, other_ai, other_rb) in query.iter() {
             if self_entity == other_entity {
                 continue;
             }
-            if self_trans.translation.distance(other_trans.translation) < self_sight.view_range {
+            let front = self_rb.velocity.normalize();
+            let diff = (other_trans.translation - self_trans.translation).truncate();
+            let angle = front.angle_between(diff);
+            let view_range = self_sight.view_angle * PI / 180.;
+            if self_trans.translation.distance(other_trans.translation) < self_sight.view_range
+                && angle < view_range
+                && angle > -view_range
+            {
                 neighbours.push(other_entity);
             }
         }
@@ -195,7 +203,7 @@ fn fish_sight(
     }
 
     for (e, n) in updates.iter() {
-        let (_, _, _, mut neighbours, _) = query.get_mut(*e).unwrap();
+        let (_, _, _, mut neighbours, _, _) = query.get_mut(*e).unwrap();
         neighbours.around.clear();
         neighbours.around.extend(n);
     }

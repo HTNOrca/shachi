@@ -55,7 +55,8 @@ impl Plugin for SimPlugin {
 
 fn run_sim_orca(
     mut cmd: Commands,
-    query: Query<Entity, With<Orca>>,
+    orca_query: Query<Entity, (With<Orca>, Without<Fish>)>,
+    fish_query: Query<Entity, (With<Fish>, Without<Orca>)>,
     mut pod_pool: ResMut<PodPool>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -69,7 +70,10 @@ fn run_sim_orca(
         }
 
         // cleanup previous simulation
-        for entity in &query {
+        for entity in &orca_query {
+            cmd.entity(entity).despawn_recursive();
+        }
+        for entity in &fish_query {
             cmd.entity(entity).despawn_recursive();
         }
 
@@ -144,7 +148,7 @@ fn run_sim_orca(
                         pod_id: Some(pod_id),
                     })
                     .insert(OrcaNeighbouring::default())
-                    .insert(Hunger(thread_rng().gen_range(0.0f32..0.3f32)))
+                    .insert(Hunger(thread_rng().gen_range(0.5f32..0.8f32)))
                     .insert(Sight {
                         view_range: event.orca_params.view_range,
                         view_angle: event.orca_params.view_angle,

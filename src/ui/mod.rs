@@ -1,6 +1,6 @@
 use bevy::{prelude::*, render::render_phase::Draw};
 use bevy_egui::{
-    egui::{containers::panel::Side, SidePanel, Slider, Window},
+    egui::{containers::panel::Side, ScrollArea, SidePanel, Slider, Window},
     EguiContext, EguiPlugin,
 };
 use bevy_mod_picking::events::PickingEvent;
@@ -59,11 +59,11 @@ impl Default for SimFormState {
     fn default() -> Self {
         Self {
             enable_orca: true,
-            pod_count: 10,
+            pod_count: 4,
             pod_size_min: 15,
             pod_size_max: 30,
 
-            enable_fish: false,
+            enable_fish: true,
             fish_count: 100,
 
             orca_params: BoidParams {
@@ -71,7 +71,12 @@ impl Default for SimFormState {
                 seperation: 2.0,
                 ..default()
             },
-            fish_params: BoidParams::default(),
+            fish_params: BoidParams {
+                randomness: 4.0,
+                view_range: 50.,
+                view_angle: 60.,
+                ..default()
+            },
         }
     }
 }
@@ -92,116 +97,121 @@ fn render_ui(
     sim: Res<Simulation>,
     pod_pool: Res<PodPool>,
 ) {
-    let panel = SidePanel::new(Side::Right, "root").resizable(true);
-
     if ui_state.show_panel {
-        panel.show(ctx.ctx_mut(), |ui| {
-            ui.heading("Simulation");
-
-            ui.separator();
-            ui.label(format!("simulated orcas: {}", sim.orca_count));
-            ui.label(format!("time: {}s", (sim.time * 100.).round() / 100.));
-
-            ui.separator();
-            ui.label("Orca Params");
-            ui.checkbox(&mut sim_form_state.enable_orca, "Enable Orcas");
-            ui.add(Slider::new(&mut sim_form_state.pod_count, 0..=50).text("Pods"));
-            ui.add(Slider::new(&mut sim_form_state.pod_size_min, 0..=50).text("Pod Size Min"));
-            ui.add(Slider::new(&mut sim_form_state.pod_size_max, 0..=50).text("Pod Size Max"));
-            if sim_form_state.pod_size_min > sim_form_state.pod_size_max {
-                sim_form_state.pod_size_max = sim_form_state.pod_size_min;
-            }
-            ui.add_space(10.);
-            ui.add(
-                Slider::new(&mut sim_form_state.orca_params.coherence, 0.0f32..=10.)
-                    .text("Coherence"),
-            );
-            ui.add(
-                Slider::new(&mut sim_form_state.orca_params.alignment, 0.0f32..=10.)
-                    .text("Alignment"),
-            );
-            ui.add(
-                Slider::new(&mut sim_form_state.orca_params.seperation, 0.0f32..=10.)
-                    .text("Seperation"),
-            );
-            ui.add(
-                Slider::new(&mut sim_form_state.orca_params.randomness, 0.0f32..=10.)
-                    .text("Randomness"),
-            );
-            ui.add(
-                Slider::new(&mut sim_form_state.orca_params.view_range, 0.0f32..=500.)
-                    .text("View Range"),
-            );
-            ui.add(
-                Slider::new(&mut sim_form_state.orca_params.view_angle, 0.0f32..=180.0)
-                    .text("View Angle"),
-            );
-
-            ui.separator();
-            ui.label("Fish Params");
-            ui.checkbox(&mut sim_form_state.enable_fish, "Enable Fish");
-            ui.add(Slider::new(&mut sim_form_state.fish_count, 0..=500).text("Fish Count"));
-            ui.add_space(10.);
-            ui.add(
-                Slider::new(&mut sim_form_state.fish_params.coherence, 0.0f32..=10.)
-                    .text("Coherence"),
-            );
-            ui.add(
-                Slider::new(&mut sim_form_state.fish_params.alignment, 0.0f32..=10.)
-                    .text("Alignment"),
-            );
-            ui.add(
-                Slider::new(&mut sim_form_state.fish_params.seperation, 0.0f32..=10.)
-                    .text("Seperation"),
-            );
-            ui.add(
-                Slider::new(&mut sim_form_state.fish_params.randomness, 0.0f32..=10.)
-                    .text("Randomness"),
-            );
-            ui.add(
-                Slider::new(&mut sim_form_state.fish_params.view_range, 0.0f32..=500.)
-                    .text("View Range"),
-            );
-            ui.add(
-                Slider::new(&mut sim_form_state.fish_params.view_angle, 0.0f32..=180.0)
-                    .text("View Angle"),
-            );
-
-            ui.separator();
-            if ui.button("Restart Simulation").clicked() {
-                run_sim_writer.send(RunSimEvent {
-                    enable_orca: sim_form_state.enable_orca,
-                    pod_count: sim_form_state.pod_count,
-                    pod_size_min: sim_form_state.pod_size_min,
-                    pod_size_max: sim_form_state.pod_size_max,
-                    pod_size: 1..6,
-
-                    enable_fish: sim_form_state.enable_fish,
-                    fish_count: sim_form_state.fish_count,
-
-                    orca_params: sim_form_state.orca_params,
-                    fish_params: sim_form_state.fish_params,
-                });
-            }
-
-            if let Some(selected) = selected {
-                if let Ok((orca, hunger)) = query.get(selected.0) {
-                    ui.heading("Inspector");
+        SidePanel::new(Side::Right, "root")
+            .resizable(true)
+            .show(ctx.ctx_mut(), |ui| {
+                let scroll_area = ScrollArea::vertical().show(ui, |ui| {
+                    ui.heading("Simulation");
                     ui.separator();
-                    if let Some(pod_id) = orca.pod_id {
-                        if let Some(pod) = pod_pool.get(&pod_id) {
-                            ui.label(format!("pod: {}", pod.name));
+                    ui.label(format!("simulated orcas: {}", sim.orca_count));
+                    ui.label(format!("time: {}s", (sim.time * 100.).round() / 100.));
+
+                    ui.separator();
+                    ui.label("Orca Params");
+                    ui.checkbox(&mut sim_form_state.enable_orca, "Enable Orcas");
+                    ui.add(Slider::new(&mut sim_form_state.pod_count, 0..=50).text("Pods"));
+                    ui.add(
+                        Slider::new(&mut sim_form_state.pod_size_min, 0..=50).text("Pod Size Min"),
+                    );
+                    ui.add(
+                        Slider::new(&mut sim_form_state.pod_size_max, 0..=50).text("Pod Size Max"),
+                    );
+                    if sim_form_state.pod_size_min > sim_form_state.pod_size_max {
+                        sim_form_state.pod_size_max = sim_form_state.pod_size_min;
+                    }
+                    ui.add_space(10.);
+                    ui.add(
+                        Slider::new(&mut sim_form_state.orca_params.coherence, 0.0f32..=10.)
+                            .text("Coherence"),
+                    );
+                    ui.add(
+                        Slider::new(&mut sim_form_state.orca_params.alignment, 0.0f32..=10.)
+                            .text("Alignment"),
+                    );
+                    ui.add(
+                        Slider::new(&mut sim_form_state.orca_params.seperation, 0.0f32..=10.)
+                            .text("Seperation"),
+                    );
+                    ui.add(
+                        Slider::new(&mut sim_form_state.orca_params.randomness, 0.0f32..=10.)
+                            .text("Randomness"),
+                    );
+                    ui.add(
+                        Slider::new(&mut sim_form_state.orca_params.view_range, 0.0f32..=500.)
+                            .text("View Range"),
+                    );
+                    ui.add(
+                        Slider::new(&mut sim_form_state.orca_params.view_angle, 0.0f32..=180.0)
+                            .text("View Angle"),
+                    );
+
+                    ui.separator();
+                    ui.label("Fish Params");
+                    ui.checkbox(&mut sim_form_state.enable_fish, "Enable Fish");
+                    ui.add(Slider::new(&mut sim_form_state.fish_count, 0..=500).text("Fish Count"));
+                    ui.add_space(10.);
+                    ui.add(
+                        Slider::new(&mut sim_form_state.fish_params.coherence, 0.0f32..=10.)
+                            .text("Coherence"),
+                    );
+                    ui.add(
+                        Slider::new(&mut sim_form_state.fish_params.alignment, 0.0f32..=10.)
+                            .text("Alignment"),
+                    );
+                    ui.add(
+                        Slider::new(&mut sim_form_state.fish_params.seperation, 0.0f32..=10.)
+                            .text("Seperation"),
+                    );
+                    ui.add(
+                        Slider::new(&mut sim_form_state.fish_params.randomness, 0.0f32..=10.)
+                            .text("Randomness"),
+                    );
+                    ui.add(
+                        Slider::new(&mut sim_form_state.fish_params.view_range, 0.0f32..=500.)
+                            .text("View Range"),
+                    );
+                    ui.add(
+                        Slider::new(&mut sim_form_state.fish_params.view_angle, 0.0f32..=180.0)
+                            .text("View Angle"),
+                    );
+
+                    ui.separator();
+                    if ui.button("Restart Simulation").clicked() {
+                        run_sim_writer.send(RunSimEvent {
+                            enable_orca: sim_form_state.enable_orca,
+                            pod_count: sim_form_state.pod_count,
+                            pod_size_min: sim_form_state.pod_size_min,
+                            pod_size_max: sim_form_state.pod_size_max,
+                            pod_size: 1..6,
+
+                            enable_fish: sim_form_state.enable_fish,
+                            fish_count: sim_form_state.fish_count,
+
+                            orca_params: sim_form_state.orca_params,
+                            fish_params: sim_form_state.fish_params,
+                        });
+                    }
+
+                    if let Some(selected) = selected {
+                        if let Ok((orca, hunger)) = query.get(selected.0) {
+                            ui.heading("Inspector");
+                            ui.separator();
+                            if let Some(pod_id) = orca.pod_id {
+                                if let Some(pod) = pod_pool.get(&pod_id) {
+                                    ui.label(format!("pod: {}", pod.name));
+                                }
+                            }
+                            ui.label(format!("name: {}", orca.name));
+                            ui.label(format!("gender: {}", orca.gender.to_string()));
+                            ui.label(format!("age: {} years", orca.age));
+                            ui.label(format!("mass: {} kg", orca.mass));
+                            ui.label(format!("type: {}", orca.orca_type.to_string()));
+                            ui.label(format!("hunger: {}", (hunger.0 * 100.).round() / 100.));
                         }
                     }
-                    ui.label(format!("name: {}", orca.name));
-                    ui.label(format!("gender: {}", orca.gender.to_string()));
-                    ui.label(format!("age: {} years", orca.age));
-                    ui.label(format!("mass: {} kg", orca.mass));
-                    ui.label(format!("type: {}", orca.orca_type.to_string()));
-                    ui.label(format!("hunger: {}", (hunger.0 * 100.).round() / 100.));
-                }
-            }
-        });
+                });
+            });
     }
 }
 
