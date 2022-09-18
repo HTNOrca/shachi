@@ -108,14 +108,14 @@ fn debug(
                     orca_type: Type::Resident,
                     pod_id: Some(pod_id),
                 })
-                .insert(Hunger::default())
+                .insert(Hunger(0.99))
                 .insert(Sight::new(20., 90.))
                 .insert(Movement {
                     coherence: 1.,
                     alignment: 1.,
                     seperation: 1.,
-                    randomess: 5.0,
-                    tracking: 0.,
+                    randomess: 5.,
+                    tracking: 10.,
                     wander_angle: 20,
                     target: None,
                     speed_scale: thread_rng().gen_range(90..110) as f32 / 10.,

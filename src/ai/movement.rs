@@ -3,14 +3,18 @@ use std::{collections::HashMap, f32::consts::PI};
 use bevy::prelude::*;
 use bevy_bobs::physics_2d::*;
 
-use crate::orca::{Orca, PodPool};
+use crate::{
+    fish::Fish,
+    orca::{Orca, PodPool},
+};
 
 #[derive(Component)]
 pub struct Sight {
     pub view_angle: f32,
     pub view_range: f32,
 
-    visible_pod_members: Vec<Entity>,
+    pub visible_pod_members: Vec<Entity>,
+    pub visible_fish: Vec<Entity>,
 }
 
 impl Sight {
@@ -20,6 +24,7 @@ impl Sight {
             view_range,
 
             visible_pod_members: vec![],
+            visible_fish: vec![],
         }
     }
 }
@@ -40,7 +45,7 @@ pub struct Movement {
     /// range between 0..359
     pub wander_angle: u32,
     /// optional target to move towards
-    pub target: Option<Vec2>,
+    pub target: Option<Entity>,
     /// Speed scale
     pub speed_scale: f32,
 }
@@ -64,7 +69,9 @@ pub struct MovementPlugin;
 
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(pod_member_sight).add_system(boid_ai);
+        app.add_system(pod_member_sight)
+            .add_system(boid_ai)
+            .add_system(prey_sight);
     }
 }
 
@@ -101,15 +108,24 @@ fn pod_member_sight(
     }
 }
 
-// fn prey_sight(
-//     query: Query<(&Transform, &Sight), With<Orca>>,
-//     prey_query: Query<(Entity, &Transform), With<Fish>>
-// ) {
-// }
+fn prey_sight(
+    mut query: Query<(&Transform, &mut Sight), With<Orca>>,
+    prey_query: Query<(Entity, &Transform), With<Fish>>,
+) {
+    for (trans, mut sight) in query.iter_mut() {
+        sight.visible_fish.clear();
+        for (prey_entity, prey_trans) in &prey_query {
+            if trans.translation.distance(prey_trans.translation) < sight.view_range {
+                sight.visible_fish.push(prey_entity);
+            }
+        }
+    }
+}
 
 fn boid_ai(
     time: Res<Time>,
-    mut query: Query<(Entity, &mut Transform, &Sight, &Movement, &mut RigidBody)>,
+    mut query: Query<(Entity, &mut Transform, &Sight, &Movement, &mut RigidBody), With<Orca>>,
+    target_query: Query<&Transform, Without<Orca>>,
 ) {
     let mut force_updates: HashMap<Entity, Vec2> = HashMap::new();
     for (entity, trans, sight, movement, rb) in query.iter() {
@@ -162,14 +178,14 @@ fn boid_ai(
                 });
         cur_force += seperation_force * movement.seperation;
 
-        /*
         // target
-        if let Some(target) = self_ai.target {
-            let target_force = target - self_trans.translation.truncate();
-            cur_force += target_force * self_ai.tracking;
+        if let Some(target) = movement.target {
+            if let Ok(target_trans) = target_query.get(target) {
+                let target_force = (target_trans.translation - trans.translation).truncate();
+                cur_force += target_force * movement.tracking;
+            }
         }
 
-        */
         force_updates.insert(entity, cur_force);
     }
 

@@ -4,7 +4,7 @@ use bevy_bobs::physics_2d::RigidBody;
 use crate::ai::movement::{Movement, Sight};
 
 #[derive(Component)]
-struct Fish;
+pub struct Fish;
 
 pub struct FishPlugin;
 

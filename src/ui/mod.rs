@@ -5,7 +5,7 @@ use bevy_egui::{
 };
 use bevy_mod_picking::events::PickingEvent;
 
-use crate::{camera::CameraFollow, orca::Orca};
+use crate::{ai::hunger::Hunger, camera::CameraFollow, orca::Orca};
 
 pub struct UIPlugin;
 
@@ -41,7 +41,7 @@ fn render_ui(
     mut ctx: ResMut<EguiContext>,
     ui_state: Res<UIState>,
     selected: Option<Res<SelectedOrca>>,
-    query: Query<&Orca>,
+    query: Query<(&Orca, &Hunger)>,
 ) {
     let panel = SidePanel::new(Side::Right, "root").resizable(true);
 
@@ -52,12 +52,13 @@ fn render_ui(
             ui.label(format!("simulated orcas: {}", ui_state.orca_count));
 
             if let Some(selected) = selected {
-                if let Ok(orca) = query.get(selected.0) {
+                if let Ok((orca, hunger)) = query.get(selected.0) {
                     ui.separator();
                     ui.label(format!("gender: {}", orca.gender.to_string()));
                     ui.label(format!("age: {}", orca.age));
                     ui.label(format!("mass: {}", orca.mass));
                     ui.label(format!("type: {}", orca.orca_type.to_string()));
+                    ui.label(format!("hunger: {}", hunger.0));
                 }
             }
         });

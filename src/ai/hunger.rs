@@ -1,10 +1,19 @@
 use bevy::prelude::*;
 use big_brain::prelude::*;
 
+use super::movement::{Movement, Sight};
+use crate::orca::Orca;
+
 const HUNGER_RATE: f32 = 0.001;
 
 #[derive(Component, Default, Deref)]
 pub struct Hunger(pub f32);
+
+impl Hunger {
+    fn eat(&mut self, amount: f32) {
+        self.0 = (self.0 + amount).clamp(0., 1.);
+    }
+}
 
 pub struct HungerPlugin;
 
@@ -39,17 +48,54 @@ fn hungry_scorer(hungers: Query<&Hunger>, mut query: Query<(&Actor, &mut Score),
 pub struct Hunt;
 
 fn hunt_action(
-    mut hungers: Query<&mut Hunger>,
+    mut cmd: Commands,
+    mut actor_query: Query<(&Transform, &mut Hunger, &Sight, &mut Movement), With<Orca>>,
+    mut prey_query: Query<(&Transform), Without<Orca>>,
     mut query: Query<(&Actor, &mut ActionState, &Hunt)>,
 ) {
     for (Actor(actor), mut state, hunt) in query.iter_mut() {
-        if let Ok(mut hunger) = hungers.get_mut(*actor) {
+        if let Ok((trans, mut hunger, sight, mut movement)) = actor_query.get_mut(*actor) {
             match *state {
                 ActionState::Requested => {
-                    // search for prey
-                    *state = ActionState::Executing
+                    // search for prey (patrol routes?)
+
+                    // check if prey was found
+                    if sight.visible_fish.len() > 0 {
+                        // TODO better way of choosing a fish to hunt
+                        let target = sight.visible_fish[0];
+                        println!("found prey {:?}", target);
+                        movement.target = Some(target);
+
+                        *state = ActionState::Executing
+                    }
                 },
-                ActionState::Executing => {},
+                ActionState::Executing => {
+                    // if close enough to prey, eat it
+                    const EAT_RANGE: f32 = 10.;
+                    const GIVE_UP_RANGE: f32 = 300.;
+
+                    if movement.target.is_none() {
+                        *state = ActionState::Cancelled;
+                        return;
+                    }
+
+                    if let Ok(prey_trans) = prey_query.get(movement.target.unwrap()) {
+                        // Eat the prey
+                        if trans.translation.distance(prey_trans.translation) < EAT_RANGE {
+                            cmd.entity(movement.target.unwrap()).despawn_recursive();
+
+                            hunger.eat(0.01);
+                            movement.target = None;
+                            *state = ActionState::Success;
+                        }
+
+                        // Give up persuing prey
+                        if trans.translation.distance(prey_trans.translation) > GIVE_UP_RANGE {}
+                    } else {
+                        *state = ActionState::Cancelled;
+                        return;
+                    }
+                },
                 _ => {},
             }
         }
