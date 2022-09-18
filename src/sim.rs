@@ -268,8 +268,8 @@ fn run_sim_fish(
             let id = cmd.spawn().id();
 
             let spawn_pos = Vec2::new(
-                thread_rng().gen_range(-100..100) as f32,
-                thread_rng().gen_range(-100..100) as f32,
+                thread_rng().gen_range(-300..300) as f32,
+                thread_rng().gen_range(-300..300) as f32,
             );
 
             let rand_angle = thread_rng().gen_range(0..(360 as i32)) as f32 * PI / 180.;

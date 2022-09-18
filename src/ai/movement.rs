@@ -284,14 +284,12 @@ fn orca_boid_ai(
         cur_force += -trans.translation.truncate().normalize() * avoidance_force;
 
         // target
-        /*
         if let Some(target) = movement.target {
             if let Ok(target_trans) = target_query.get(target) {
                 let target_force = (target_trans.translation - trans.translation).truncate();
                 cur_force += target_force * movement.tracking;
             }
         }
-        */
 
         force_updates.insert(entity, cur_force);
     }
@@ -378,17 +376,17 @@ fn fish_boid_ai(
         cur_force += seperation_force * movement.seperation;
 
         // avoidance
-        let avoidance_force =
-            50. / (100. - trans.translation.truncate().length()).clamp(0.00001, 1e10);
-        cur_force += -trans.translation.truncate().normalize() * avoidance_force;
+        // let avoidance_force =
+        //     50. / (100. - trans.translation.truncate().length()).clamp(0.00001, 1e10);
+        // cur_force += -trans.translation.truncate().normalize() * avoidance_force;
 
         // target
-        if let Some(target) = movement.target {
-            if let Ok(target_trans) = target_query.get(target) {
-                let target_force = (target_trans.translation - trans.translation).truncate();
-                cur_force += target_force * movement.tracking;
-            }
-        }
+        // if let Some(target) = movement.target {
+        //     if let Ok(target_trans) = target_query.get(target) {
+        //         let target_force = (target_trans.translation - trans.translation).truncate();
+        //         cur_force += target_force * movement.tracking;
+        //     }
+        // }
 
         force_updates.insert(entity, cur_force);
     }

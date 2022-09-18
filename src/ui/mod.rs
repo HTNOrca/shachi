@@ -100,6 +100,7 @@ fn render_ui(
     if ui_state.show_panel {
         SidePanel::new(Side::Right, "root")
             .resizable(true)
+            .min_width(200.)
             .show(ctx.ctx_mut(), |ui| {
                 let scroll_area = ScrollArea::vertical().show(ui, |ui| {
                     ui.heading("Simulation");
