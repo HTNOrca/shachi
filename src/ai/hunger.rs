@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use big_brain::prelude::*;
 
-use super::movement::{Movement, Sight};
-use crate::orca::Orca;
+use super::movement::{Movement, OrcaNeighbouring, Sight};
+use crate::orca::{DespawnOrcaEvent, Orca};
 
 const HUNGER_RATE: f32 = 0.001;
 
@@ -26,9 +26,16 @@ impl Plugin for HungerPlugin {
     }
 }
 
-fn passive_hunger_system(time: Res<Time>, mut hunger: Query<&mut Hunger>) {
-    for mut hunger in hunger.iter_mut() {
+fn passive_hunger_system(
+    time: Res<Time>,
+    mut hunger: Query<(Entity, &mut Hunger)>,
+    mut writer: EventWriter<DespawnOrcaEvent>,
+) {
+    for (entity, mut hunger) in hunger.iter_mut() {
         hunger.0 += HUNGER_RATE * time.delta().as_micros() as f32 / 1_000_000.0;
+        if hunger.0 >= 1. {
+            writer.send(DespawnOrcaEvent(entity));
+        }
         hunger.0 = hunger.0.clamp(0., 1.);
     }
 }
@@ -49,20 +56,20 @@ pub struct Hunt;
 
 fn hunt_action(
     mut cmd: Commands,
-    mut actor_query: Query<(&Transform, &mut Hunger, &Sight, &mut Movement), With<Orca>>,
+    mut actor_query: Query<(&Transform, &mut Hunger, &OrcaNeighbouring, &mut Movement), With<Orca>>,
     mut prey_query: Query<(&Transform), Without<Orca>>,
     mut query: Query<(&Actor, &mut ActionState, &Hunt)>,
 ) {
     for (Actor(actor), mut state, hunt) in query.iter_mut() {
-        if let Ok((trans, mut hunger, sight, mut movement)) = actor_query.get_mut(*actor) {
+        if let Ok((trans, mut hunger, neighbours, mut movement)) = actor_query.get_mut(*actor) {
             match *state {
                 ActionState::Requested => {
                     // search for prey (patrol routes?)
 
                     // check if prey was found
-                    if sight.visible_fish.len() > 0 {
+                    if neighbours.prey.len() > 0 {
                         // TODO better way of choosing a fish to hunt
-                        let target = sight.visible_fish[0];
+                        let target = neighbours.prey[0];
                         movement.target = Some(target);
 
                         *state = ActionState::Executing

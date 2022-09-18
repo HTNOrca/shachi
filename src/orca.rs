@@ -12,6 +12,9 @@ use crate::ai::{
     movement::{Movement, Sight},
 };
 
+pub struct SpawnOrcaEvent;
+pub struct DespawnOrcaEvent(pub Entity);
+
 pub type PodId = usize;
 
 #[enum_string]
@@ -54,6 +57,16 @@ pub struct OrcaPlugin;
 
 impl Plugin for OrcaPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(PodPool(HashMap::new()));
+        app.insert_resource(PodPool(HashMap::new()))
+            .add_event::<SpawnOrcaEvent>()
+            .add_event::<DespawnOrcaEvent>()
+            .add_system(despawn);
+    }
+}
+
+fn despawn(mut cmd: Commands, mut events: EventReader<DespawnOrcaEvent>) {
+    for DespawnOrcaEvent(entity) in events.iter() {
+        println!("orca has passed away {:?}", entity);
+        cmd.entity(*entity).despawn_recursive();
     }
 }
