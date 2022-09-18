@@ -239,8 +239,12 @@ fn orca_boid_ai(
         use rand::{thread_rng, Rng};
 
         if rb.velocity.length() != 0. {
-            let rand: i32 = thread_rng().gen_range(0..(movement.wander_angle as i32));
-            let angle_deviation = ((rand - 180) as f32) * PI / 180.;
+            // let rand: i32 = thread_rng().gen_range(0..(movement.wander_angle as i32));
+            let angle_deviation = thread_rng()
+                .gen_range(-(movement.wander_angle as i32)..(movement.wander_angle as i32))
+                as f32
+                * PI
+                / 180.;
             let forward = rb.velocity.angle_between(Vec2::X);
             let random_force = Mat2::from_angle(angle_deviation + forward) * Vec2::X;
             cur_force += random_force * movement.randomess;
@@ -280,12 +284,14 @@ fn orca_boid_ai(
         cur_force += -trans.translation.truncate().normalize() * avoidance_force;
 
         // target
+        /*
         if let Some(target) = movement.target {
             if let Ok(target_trans) = target_query.get(target) {
                 let target_force = (target_trans.translation - trans.translation).truncate();
                 cur_force += target_force * movement.tracking;
             }
         }
+        */
 
         force_updates.insert(entity, cur_force);
     }

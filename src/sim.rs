@@ -49,7 +49,9 @@ pub struct SimPlugin;
 
 impl Plugin for SimPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(Simulation::default())
+        let mut sim = Simulation::default();
+        sim.timer.pause();
+        app.insert_resource(sim)
             .add_event::<RunSimEvent>()
             .add_system(run_sim_orca)
             .add_system(run_sim_fish)
