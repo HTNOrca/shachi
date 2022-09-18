@@ -3037,6 +3037,7 @@ dependencies = [
  "bevy_prototype_lyon",
  "big-brain",
  "iyes_loopless",
+ "lazy_static",
  "pino_utils",
  "rand",
 ]

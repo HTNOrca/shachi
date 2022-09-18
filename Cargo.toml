@@ -19,3 +19,4 @@ bevy_mod_picking = { version = "0.9" }
 
 rand = { version = "0.8" }
 pino_utils = { git = "https://github.com/MrPicklePinosaur/pino_utils" }
+lazy_static = "1.4"

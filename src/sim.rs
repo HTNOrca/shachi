@@ -1,4 +1,3 @@
-
 use std::ops::Range;
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle, time::Stopwatch};
@@ -14,6 +13,7 @@ use crate::{
         hunger::{Hunger, Hungry, Hunt},
         movement::{Movement, Sight},
     },
+    names::*,
     orca::{Gender, Orca, Pod, PodPool, Type},
 };
 
@@ -62,13 +62,21 @@ fn run_sim(
             cmd.entity(entity).despawn_recursive();
         }
 
-        use rand::{thread_rng, Rng};
+        use rand::{seq::SliceRandom, thread_rng, Rng};
 
         cmd.insert_resource(Simulation::default());
 
         for pod_id in 0..*pod_count {
             // create a new pod
-            let mut pod = Pod::new();
+            let pod_name = format!(
+                "{} {}",
+                POD_NAME_ADJ.choose(&mut thread_rng()).unwrap(),
+                POD_NAME_NOUN.choose(&mut thread_rng()).unwrap()
+            );
+            let mut pod = Pod {
+                name: pod_name,
+                members: vec![],
+            };
             let pod_color = Color::rgb(
                 thread_rng().gen_range(0..100) as f32 / 100.,
                 thread_rng().gen_range(0..100) as f32 / 100.,
@@ -80,6 +88,11 @@ fn run_sim(
                 thread_rng().gen_range(-100..100) as f32,
                 thread_rng().gen_range(-100..100) as f32,
             );
+            let pod_type = match thread_rng().gen_range(0..=1) {
+                0 => Type::Resident,
+                1 => Type::Transient,
+                _ => unreachable!(),
+            };
 
             for j in 0..pod_size {
                 let id = cmd.spawn().id();
@@ -93,14 +106,30 @@ fn run_sim(
                 let rand_angle = thread_rng().gen_range(0..(360 as i32)) as f32 * PI / 180.;
                 let velocity = Mat2::from_angle(rand_angle) * Vec2::X * 10.;
 
+                // independent params
+                let gender = match thread_rng().gen_range(0..=1) {
+                    0 => Gender::Male,
+                    1 => Gender::Female,
+                    _ => unreachable!(),
+                };
+                let age = thread_rng().gen_range(5..50);
+
+                // dependent params
+                let name = match gender {
+                    Gender::Male => MALE_NAMES.choose(&mut thread_rng()).unwrap(),
+                    Gender::Female => FEMALE_NAMES.choose(&mut thread_rng()).unwrap(),
+                };
                 let mass = thread_rng().gen_range(2000..3000) as f32;
+
+                let id = cmd.spawn().id();
 
                 cmd.entity(id)
                     .insert(Orca {
-                        gender: Gender::Male,
-                        age: 20,
+                        name: String::from(*name),
+                        gender,
+                        age,
                         mass,
-                        orca_type: Type::Resident,
+                        orca_type: pod_type.clone(),
                         pod_id: Some(pod_id),
                     })
                     .insert(Hunger(0.99))
@@ -143,9 +172,16 @@ fn run_sim(
                             },
                             DrawMode::Outlined {
                                 fill_mode: FillMode::color(pod_color),
-                                outline_mode: StrokeMode::new(Color::BLACK, 0.1),
+                                outline_mode: StrokeMode::new(
+                                    if gender.clone() == Gender::Male {
+                                        Color::BLACK
+                                    } else {
+                                        Color::GRAY
+                                    },
+                                    0.1,
+                                ),
                             },
-                            Transform::default(),
+                            Transform::from_scale(Vec3::splat(0.8 + age as f32 / 50.)),
                         ));
                     })
                     .insert_bundle(PickableBundle::default());

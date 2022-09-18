@@ -8,7 +8,7 @@ use bevy_mod_picking::events::PickingEvent;
 use crate::{
     ai::hunger::Hunger,
     camera::CameraFollow,
-    orca::Orca,
+    orca::{Orca, PodPool},
     sim::{RunSimEvent, Simulation},
 };
 
@@ -62,6 +62,7 @@ fn render_ui(
     query: Query<(&Orca, &Hunger)>,
     mut run_sim_writer: EventWriter<RunSimEvent>,
     sim: Res<Simulation>,
+    pod_pool: Res<PodPool>,
 ) {
     let panel = SidePanel::new(Side::Right, "root").resizable(true);
 
@@ -83,6 +84,12 @@ fn render_ui(
                 if let Ok((orca, hunger)) = query.get(selected.0) {
                     ui.heading("Inspector");
                     ui.separator();
+                    if let Some(pod_id) = orca.pod_id {
+                        if let Some(pod) = pod_pool.get(&pod_id) {
+                            ui.label(format!("pod: {}", pod.name));
+                        }
+                    }
+                    ui.label(format!("name: {}", orca.name));
                     ui.label(format!("gender: {}", orca.gender.to_string()));
                     ui.label(format!("age: {}", orca.age));
                     ui.label(format!("mass: {}", orca.mass));

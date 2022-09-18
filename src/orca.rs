@@ -15,12 +15,14 @@ use crate::ai::{
 pub type PodId = usize;
 
 #[enum_string]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Gender {
     Male,
     Female,
 }
 
 #[enum_string]
+#[derive(Clone, Copy)]
 pub enum Type {
     Resident,
     Transient,
@@ -28,6 +30,7 @@ pub enum Type {
 
 #[derive(Component)]
 pub struct Orca {
+    pub name: String,
     pub gender: Gender,
     /// age in years
     pub age: u32,
@@ -40,13 +43,8 @@ pub struct Orca {
 pub struct OrcaBundle {}
 
 pub struct Pod {
+    pub name: String,
     pub members: Vec<Entity>,
-}
-
-impl Pod {
-    pub fn new() -> Self {
-        Self { members: vec![] }
-    }
 }
 
 #[derive(Deref, DerefMut)]
