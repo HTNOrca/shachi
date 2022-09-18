@@ -1,5 +1,3 @@
-#![allow(unused)]
-#![allow(dead_code)]
 mod ai;
 mod app;
 mod camera;

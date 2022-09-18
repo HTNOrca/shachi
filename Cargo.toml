@@ -16,6 +16,7 @@ bevy_egui = "0.16"
 bevy_pancam = { version = "0.6", features = ["bevy_egui"] }
 bevy_prototype_lyon = { version = "0.6" }
 bevy_mod_picking = { version = "0.9" }
+bevy_rapier2d = { version = "0.16" }
 
 rand = { version = "0.8" }
 pino_utils = { git = "https://github.com/MrPicklePinosaur/pino_utils" }

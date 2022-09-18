@@ -2,6 +2,7 @@ use bevy::{prelude::*, render::texture::ImageSettings};
 use bevy_bobs::physics_2d::*;
 use bevy_mod_picking::*;
 use bevy_prototype_lyon::prelude::*;
+use bevy_rapier2d::prelude::*;
 
 use crate::{
     ai::{
@@ -36,6 +37,8 @@ pub fn app() {
     app.add_plugins(DefaultPlugins)
         .add_plugin(ShapePlugin)
         .add_plugin(PhysicsPlugin)
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
+        .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugins(DefaultPickingPlugins);
     // .add_plugin(DebugEventsPickingPlugin);
 

@@ -105,7 +105,7 @@ fn run_sim_orca(
                 _ => unreachable!(),
             };
 
-            for j in 0..pod_size {
+            for _ in 0..pod_size {
                 let id = cmd.spawn().id();
                 pod.members.push(id);
 
@@ -161,9 +161,7 @@ fn run_sim_orca(
                         ..default()
                     })
                     .insert(RigidBody {
-                        max_velocity: Some(20.),
                         velocity,
-                        mass: 1.,
                         ..default()
                     })
                     .insert(
