@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_egui::{
-    egui::{containers::panel::Side, SidePanel, Window},
+    egui::{containers::panel::Side, SidePanel, Slider, Window},
     EguiContext, EguiPlugin,
 };
 use bevy_mod_picking::events::PickingEvent;
@@ -17,6 +17,7 @@ pub struct UIPlugin;
 impl Plugin for UIPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(UIState::default())
+            .insert_resource(SimFormState::default())
             .add_plugin(EguiPlugin)
             .add_system(render_ui)
             .add_system(ui_controller)
@@ -31,6 +32,22 @@ pub struct UIState {
     show_panel: bool,
 }
 
+pub struct SimFormState {
+    pod_count: usize,
+    pod_size_min: usize,
+    pod_size_max: usize,
+}
+
+impl Default for SimFormState {
+    fn default() -> Self {
+        Self {
+            pod_count: 10,
+            pod_size_min: 1,
+            pod_size_max: 6,
+        }
+    }
+}
+
 impl Default for UIState {
     fn default() -> Self {
         Self { show_panel: true }
@@ -40,6 +57,7 @@ impl Default for UIState {
 fn render_ui(
     mut ctx: ResMut<EguiContext>,
     ui_state: Res<UIState>,
+    mut sim_form_state: ResMut<SimFormState>,
     selected: Option<Res<SelectedOrca>>,
     query: Query<(&Orca, &Hunger)>,
     mut run_sim_writer: EventWriter<RunSimEvent>,
@@ -53,8 +71,12 @@ fn render_ui(
             ui.separator();
             ui.label(format!("simulated orcas: {}", sim.orca_count));
             ui.label(format!("time: {}", sim.time));
+            ui.add(Slider::new(&mut sim_form_state.pod_count, 0..=50).text("Pods"));
             if ui.button("Restart Simulation").clicked() {
-                run_sim_writer.send(RunSimEvent);
+                run_sim_writer.send(RunSimEvent {
+                    pod_count: sim_form_state.pod_count,
+                    pod_size: 1..6,
+                });
             }
 
             if let Some(selected) = selected {
