@@ -147,7 +147,7 @@ fn run_sim_orca(
                     .insert(Hunger(thread_rng().gen_range(0.0f32..0.3f32)))
                     .insert(Sight {
                         view_range: event.orca_params.view_range,
-                        view_angle: 90.,
+                        view_angle: event.orca_params.view_angle,
                     })
                     .insert(Movement {
                         coherence: event.orca_params.coherence,
@@ -245,7 +245,7 @@ fn run_sim_fish(
                 })
                 .insert(Sight {
                     view_range: event.fish_params.view_range,
-                    view_angle: 90.,
+                    view_angle: event.fish_params.view_angle,
                 })
                 .insert(Movement {
                     coherence: event.fish_params.coherence,

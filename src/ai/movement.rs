@@ -54,6 +54,7 @@ pub struct BoidParams {
     pub randomness: f32,
 
     pub view_range: f32,
+    pub view_angle: f32,
 }
 
 impl Default for BoidParams {
@@ -65,6 +66,7 @@ impl Default for BoidParams {
             randomness: 1.,
 
             view_range: 50.,
+            view_angle: 30.,
         }
     }
 }
@@ -104,15 +106,19 @@ fn pod_member_sight(
         &Sight,
         &mut OrcaNeighbouring,
         &Movement,
+        &RigidBody,
     )>,
     pod_pool: Res<PodPool>,
 ) {
     let mut updates: HashMap<Entity, Vec<Entity>> = HashMap::new();
-    for (self_entity, self_orca, self_trans, self_sight, neighbours, self_movement) in query.iter()
+    for (self_entity, self_orca, self_trans, self_sight, neighbours, self_movement, self_rb) in
+        query.iter()
     {
         // fetch all boids in viewing range
         let mut neighbours: Vec<Entity> = vec![];
-        for (other_entity, other_orca, other_trans, other_sight, _, other_ai) in query.iter() {
+        for (other_entity, other_orca, other_trans, other_sight, _, other_ai, other_rb) in
+            query.iter()
+        {
             if self_entity == other_entity {
                 continue;
             }
@@ -122,7 +128,15 @@ fn pod_member_sight(
             {
                 continue;
             }
-            if self_trans.translation.distance(other_trans.translation) < self_sight.view_range {
+
+            let front = self_rb.velocity.normalize();
+            let diff = (other_trans.translation - self_trans.translation).truncate();
+            let angle = front.angle_between(diff);
+            let view_range = self_sight.view_angle * PI / 180.;
+            if self_trans.translation.distance(other_trans.translation) < self_sight.view_range
+                && angle < view_range
+                && angle > -view_range
+            {
                 neighbours.push(other_entity);
             }
         }
@@ -131,7 +145,7 @@ fn pod_member_sight(
     }
 
     for (e, n) in updates.iter() {
-        let (_, _, _, _, mut neighbours, _) = query.get_mut(*e).unwrap();
+        let (_, _, _, _, mut neighbours, _, _) = query.get_mut(*e).unwrap();
         neighbours.pod_members.clear();
         neighbours.pod_members.extend(n);
     }
@@ -348,6 +362,11 @@ fn fish_boid_ai(
                     acc + dir / dist
                 });
         cur_force += seperation_force * movement.seperation;
+
+        // avoidance
+        let avoidance_force =
+            50. / (100. - trans.translation.truncate().length()).clamp(0.00001, 1e10);
+        cur_force += -trans.translation.truncate().normalize() * avoidance_force;
 
         // target
         if let Some(target) = movement.target {

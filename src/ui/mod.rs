@@ -66,7 +66,11 @@ impl Default for SimFormState {
             enable_fish: false,
             fish_count: 100,
 
-            orca_params: BoidParams::default(),
+            orca_params: BoidParams {
+                coherence: 0.5,
+                seperation: 2.0,
+                ..default()
+            },
             fish_params: BoidParams::default(),
         }
     }
@@ -128,6 +132,10 @@ fn render_ui(
                 Slider::new(&mut sim_form_state.orca_params.view_range, 0.0f32..=500.)
                     .text("View Range"),
             );
+            ui.add(
+                Slider::new(&mut sim_form_state.orca_params.view_angle, 0.0f32..=180.0)
+                    .text("View Angle"),
+            );
 
             ui.separator();
             ui.label("Fish Params");
@@ -153,6 +161,10 @@ fn render_ui(
             ui.add(
                 Slider::new(&mut sim_form_state.fish_params.view_range, 0.0f32..=500.)
                     .text("View Range"),
+            );
+            ui.add(
+                Slider::new(&mut sim_form_state.fish_params.view_angle, 0.0f32..=180.0)
+                    .text("View Angle"),
             );
 
             ui.separator();
