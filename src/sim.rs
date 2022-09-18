@@ -29,6 +29,16 @@ pub struct Simulation {
 pub struct RunSimEvent {
     pub pod_count: usize,
     pub pod_size: Range<usize>,
+
+    pub pod_size_min: usize,
+    pub pod_size_max: usize,
+
+    pub coherence: f32,
+    pub alignment: f32,
+    pub seperation: f32,
+    pub randomness: f32,
+
+    pub view_range: f32,
 }
 
 pub struct SimPlugin;
@@ -38,7 +48,7 @@ impl Plugin for SimPlugin {
         app.insert_resource(Simulation::default())
             .add_event::<RunSimEvent>()
             .add_system(run_sim_orca)
-            .add_system(run_sim_fish)
+            // .add_system(run_sim_fish)
             .add_system(sim_time)
             .add_system(sim_count);
     }
@@ -54,11 +64,7 @@ fn run_sim_orca(
 ) {
     use std::f32::consts::PI;
 
-    for RunSimEvent {
-        pod_count,
-        pod_size,
-    } in events.iter()
-    {
+    for event in events.iter() {
         // cleanup previous simulation
         for entity in &query {
             cmd.entity(entity).despawn_recursive();
@@ -68,7 +74,7 @@ fn run_sim_orca(
 
         cmd.insert_resource(Simulation::default());
 
-        for pod_id in 0..*pod_count {
+        for pod_id in 0..event.pod_count {
             // create a new pod
             let pod_name = format!(
                 "{} {}",
@@ -84,7 +90,7 @@ fn run_sim_orca(
                 thread_rng().gen_range(0..100) as f32 / 100.,
                 thread_rng().gen_range(0..100) as f32 / 100.,
             );
-            let pod_size = thread_rng().gen_range(1..6);
+            let pod_size = thread_rng().gen_range(event.pod_size_min..event.pod_size_max);
 
             let pod_spawn_pos = Vec2::new(
                 thread_rng().gen_range(-100..100) as f32,
@@ -137,14 +143,14 @@ fn run_sim_orca(
                     .insert(OrcaNeighbouring::default())
                     .insert(Hunger(thread_rng().gen_range(0.0f32..0.3f32)))
                     .insert(Sight {
-                        view_range: 20.,
+                        view_range: event.view_range,
                         view_angle: 90.,
                     })
                     .insert(Movement {
-                        coherence: 1.,
-                        alignment: 1.,
-                        seperation: 1.,
-                        randomess: 5.,
+                        coherence: event.coherence,
+                        alignment: event.alignment,
+                        seperation: event.seperation,
+                        randomess: event.randomness,
                         tracking: 10.,
                         wander_angle: 20,
                         target: None,
@@ -154,7 +160,7 @@ fn run_sim_orca(
                     .insert(RigidBody {
                         max_velocity: Some(20.),
                         velocity,
-                        mass,
+                        mass: 1.,
                         ..default()
                     })
                     .insert(
@@ -207,11 +213,7 @@ fn run_sim_fish(
 
     use rand::{thread_rng, Rng};
 
-    for RunSimEvent {
-        pod_count,
-        pod_size,
-    } in events.iter()
-    {
+    for event in events.iter() {
         for i in 0..=100 {
             let id = cmd.spawn().id();
 
