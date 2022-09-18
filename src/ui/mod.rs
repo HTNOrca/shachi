@@ -1,16 +1,24 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::render_phase::Draw};
 use bevy_egui::{
     egui::{containers::panel::Side, SidePanel, Slider, Window},
     EguiContext, EguiPlugin,
 };
 use bevy_mod_picking::events::PickingEvent;
+use bevy_prototype_lyon::prelude::*;
+use pino_utils::{ok_or_return, some_or_return};
 
 use crate::{
-    ai::hunger::Hunger,
+    ai::{
+        hunger::Hunger,
+        movement::{BoidParams, OrcaNeighbouring},
+    },
     camera::CameraFollow,
     orca::{Orca, PodPool},
     sim::{RunSimEvent, Simulation},
 };
+
+#[derive(Component)]
+pub struct NeighbourLine;
 
 pub struct UIPlugin;
 
@@ -22,7 +30,9 @@ impl Plugin for UIPlugin {
             .add_system(render_ui)
             .add_system(ui_controller)
             .add_system(select_controller)
-            .add_system(deselect_controller);
+            .add_system(deselect_controller)
+            .add_system(neighbour_debug)
+            .add_system(line_cleaner);
     }
 }
 
@@ -33,31 +43,31 @@ pub struct UIState {
 }
 
 pub struct SimFormState {
+    enable_orca: bool,
     pod_count: usize,
     pod_size_min: usize,
     pod_size_max: usize,
 
-    coherence: f32,
-    alignment: f32,
-    seperation: f32,
-    randomness: f32,
+    enable_fish: bool,
+    fish_count: usize,
 
-    view_range: f32,
+    orca_params: BoidParams,
+    fish_params: BoidParams,
 }
 
 impl Default for SimFormState {
     fn default() -> Self {
         Self {
+            enable_orca: true,
             pod_count: 10,
             pod_size_min: 15,
             pod_size_max: 30,
 
-            coherence: 1.,
-            alignment: 1.,
-            seperation: 1.,
-            randomness: 1.,
+            enable_fish: false,
+            fish_count: 100,
 
-            view_range: 50.,
+            orca_params: BoidParams::default(),
+            fish_params: BoidParams::default(),
         }
     }
 }
@@ -83,32 +93,82 @@ fn render_ui(
     if ui_state.show_panel {
         panel.show(ctx.ctx_mut(), |ui| {
             ui.heading("Simulation");
+
             ui.separator();
             ui.label(format!("simulated orcas: {}", sim.orca_count));
             ui.label(format!("time: {}s", (sim.time * 100.).round() / 100.));
+
+            ui.separator();
+            ui.label("Orca Params");
+            ui.checkbox(&mut sim_form_state.enable_orca, "Enable Orcas");
             ui.add(Slider::new(&mut sim_form_state.pod_count, 0..=50).text("Pods"));
             ui.add(Slider::new(&mut sim_form_state.pod_size_min, 0..=50).text("Pod Size Min"));
             ui.add(Slider::new(&mut sim_form_state.pod_size_max, 0..=50).text("Pod Size Max"));
             if sim_form_state.pod_size_min > sim_form_state.pod_size_max {
                 sim_form_state.pod_size_max = sim_form_state.pod_size_min;
             }
+            ui.add_space(10.);
+            ui.add(
+                Slider::new(&mut sim_form_state.orca_params.coherence, 0.0f32..=10.)
+                    .text("Coherence"),
+            );
+            ui.add(
+                Slider::new(&mut sim_form_state.orca_params.alignment, 0.0f32..=10.)
+                    .text("Alignment"),
+            );
+            ui.add(
+                Slider::new(&mut sim_form_state.orca_params.seperation, 0.0f32..=10.)
+                    .text("Seperation"),
+            );
+            ui.add(
+                Slider::new(&mut sim_form_state.orca_params.randomness, 0.0f32..=10.)
+                    .text("Randomness"),
+            );
+            ui.add(
+                Slider::new(&mut sim_form_state.orca_params.view_range, 0.0f32..=500.)
+                    .text("View Range"),
+            );
+
             ui.separator();
-            ui.add(Slider::new(&mut sim_form_state.coherence, 0.0f32..=10.).text("Coherence"));
-            ui.add(Slider::new(&mut sim_form_state.alignment, 0.0f32..=10.).text("Alignment"));
-            ui.add(Slider::new(&mut sim_form_state.seperation, 0.0f32..=10.).text("Seperation"));
-            ui.add(Slider::new(&mut sim_form_state.randomness, 0.0f32..=10.).text("Randomness"));
-            ui.add(Slider::new(&mut sim_form_state.view_range, 0.0f32..=500.).text("View Range"));
+            ui.label("Fish Params");
+            ui.checkbox(&mut sim_form_state.enable_fish, "Enable Fish");
+            ui.add(Slider::new(&mut sim_form_state.fish_count, 0..=500).text("Fish Count"));
+            ui.add_space(10.);
+            ui.add(
+                Slider::new(&mut sim_form_state.fish_params.coherence, 0.0f32..=10.)
+                    .text("Coherence"),
+            );
+            ui.add(
+                Slider::new(&mut sim_form_state.fish_params.alignment, 0.0f32..=10.)
+                    .text("Alignment"),
+            );
+            ui.add(
+                Slider::new(&mut sim_form_state.fish_params.seperation, 0.0f32..=10.)
+                    .text("Seperation"),
+            );
+            ui.add(
+                Slider::new(&mut sim_form_state.fish_params.randomness, 0.0f32..=10.)
+                    .text("Randomness"),
+            );
+            ui.add(
+                Slider::new(&mut sim_form_state.fish_params.view_range, 0.0f32..=500.)
+                    .text("View Range"),
+            );
+
+            ui.separator();
             if ui.button("Restart Simulation").clicked() {
                 run_sim_writer.send(RunSimEvent {
+                    enable_orca: sim_form_state.enable_orca,
                     pod_count: sim_form_state.pod_count,
                     pod_size_min: sim_form_state.pod_size_min,
                     pod_size_max: sim_form_state.pod_size_max,
                     pod_size: 1..6,
-                    coherence: sim_form_state.coherence,
-                    alignment: sim_form_state.alignment,
-                    seperation: sim_form_state.seperation,
-                    randomness: sim_form_state.randomness,
-                    view_range: sim_form_state.view_range,
+
+                    enable_fish: sim_form_state.enable_fish,
+                    fish_count: sim_form_state.fish_count,
+
+                    orca_params: sim_form_state.orca_params,
+                    fish_params: sim_form_state.fish_params,
                 });
             }
 
@@ -155,5 +215,31 @@ fn deselect_controller(mut cmd: Commands, keys: Res<Input<KeyCode>>) {
     if keys.just_pressed(KeyCode::Escape) {
         cmd.remove_resource::<SelectedOrca>();
         cmd.remove_resource::<CameraFollow>();
+    }
+}
+
+fn neighbour_debug(
+    mut cmd: Commands,
+    selected: Option<Res<SelectedOrca>>,
+    query: Query<(&OrcaNeighbouring, &Transform)>,
+) {
+    let selected = some_or_return!(selected);
+    let (neighbouring, self_trans) = ok_or_return!(query.get(selected.0));
+
+    for (_, trans) in query.iter_many(neighbouring.pod_members.clone()) {
+        cmd.spawn_bundle(GeometryBuilder::build_as(
+            &shapes::Line(
+                self_trans.translation.truncate(),
+                trans.translation.truncate(),
+            ),
+            DrawMode::Stroke(StrokeMode::new(Color::BLACK, 0.2)),
+            Transform::default(),
+        ))
+        .insert(NeighbourLine);
+    }
+}
+fn line_cleaner(mut cmd: Commands, query: Query<Entity, With<NeighbourLine>>) {
+    for e in &query {
+        cmd.entity(e).despawn_recursive();
     }
 }

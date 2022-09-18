@@ -46,6 +46,29 @@ pub struct Movement {
     pub speed_scale: f32,
 }
 
+#[derive(Copy, Clone)]
+pub struct BoidParams {
+    pub coherence: f32,
+    pub alignment: f32,
+    pub seperation: f32,
+    pub randomness: f32,
+
+    pub view_range: f32,
+}
+
+impl Default for BoidParams {
+    fn default() -> Self {
+        Self {
+            coherence: 1.,
+            alignment: 1.,
+            seperation: 1.,
+            randomness: 1.,
+
+            view_range: 50.,
+        }
+    }
+}
+
 impl Default for Movement {
     fn default() -> Self {
         Self {
@@ -228,6 +251,11 @@ fn orca_boid_ai(
                     acc + dir / dist
                 });
         cur_force += seperation_force * movement.seperation;
+
+        // avoidance
+        let avoidance_force =
+            50. / (100. - trans.translation.truncate().length()).clamp(0.00001, 1e10);
+        cur_force += -trans.translation.truncate().normalize() * avoidance_force;
 
         // target
         if let Some(target) = movement.target {

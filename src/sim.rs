@@ -11,7 +11,7 @@ use pino_utils::enum_string;
 use crate::{
     ai::{
         hunger::{Hunger, Hungry, Hunt},
-        movement::{FishNeighbouring, Movement, OrcaNeighbouring, Sight},
+        movement::{BoidParams, FishNeighbouring, Movement, OrcaNeighbouring, Sight},
     },
     fish::Fish,
     names::*,
@@ -27,18 +27,17 @@ pub struct Simulation {
 }
 
 pub struct RunSimEvent {
+    pub enable_orca: bool,
     pub pod_count: usize,
     pub pod_size: Range<usize>,
-
     pub pod_size_min: usize,
     pub pod_size_max: usize,
 
-    pub coherence: f32,
-    pub alignment: f32,
-    pub seperation: f32,
-    pub randomness: f32,
+    pub enable_fish: bool,
+    pub fish_count: usize,
 
-    pub view_range: f32,
+    pub orca_params: BoidParams,
+    pub fish_params: BoidParams,
 }
 
 pub struct SimPlugin;
@@ -48,7 +47,7 @@ impl Plugin for SimPlugin {
         app.insert_resource(Simulation::default())
             .add_event::<RunSimEvent>()
             .add_system(run_sim_orca)
-            // .add_system(run_sim_fish)
+            .add_system(run_sim_fish)
             .add_system(sim_time)
             .add_system(sim_count);
     }
@@ -65,6 +64,10 @@ fn run_sim_orca(
     use std::f32::consts::PI;
 
     for event in events.iter() {
+        if !event.enable_orca {
+            continue;
+        }
+
         // cleanup previous simulation
         for entity in &query {
             cmd.entity(entity).despawn_recursive();
@@ -143,14 +146,14 @@ fn run_sim_orca(
                     .insert(OrcaNeighbouring::default())
                     .insert(Hunger(thread_rng().gen_range(0.0f32..0.3f32)))
                     .insert(Sight {
-                        view_range: event.view_range,
+                        view_range: event.orca_params.view_range,
                         view_angle: 90.,
                     })
                     .insert(Movement {
-                        coherence: event.coherence,
-                        alignment: event.alignment,
-                        seperation: event.seperation,
-                        randomess: event.randomness,
+                        coherence: event.orca_params.coherence,
+                        alignment: event.orca_params.alignment,
+                        seperation: event.orca_params.seperation,
+                        randomess: event.orca_params.randomness,
                         tracking: 10.,
                         wander_angle: 20,
                         target: None,
@@ -214,7 +217,11 @@ fn run_sim_fish(
     use rand::{thread_rng, Rng};
 
     for event in events.iter() {
-        for i in 0..=100 {
+        if !event.enable_fish {
+            continue;
+        }
+
+        for i in 0..=event.fish_count {
             let id = cmd.spawn().id();
 
             let spawn_pos = Vec2::new(
@@ -237,14 +244,14 @@ fn run_sim_fish(
                     ..default()
                 })
                 .insert(Sight {
-                    view_range: 20.,
+                    view_range: event.fish_params.view_range,
                     view_angle: 90.,
                 })
                 .insert(Movement {
-                    coherence: 1.,
-                    alignment: 1.,
-                    seperation: 1.,
-                    randomess: 5.,
+                    coherence: event.fish_params.coherence,
+                    alignment: event.fish_params.alignment,
+                    seperation: event.fish_params.seperation,
+                    randomess: event.fish_params.randomness,
                     tracking: 10.,
                     wander_angle: 20,
                     target: None,
