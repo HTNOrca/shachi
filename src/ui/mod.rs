@@ -71,7 +71,7 @@ fn render_ui(
             ui.heading("Simulation");
             ui.separator();
             ui.label(format!("simulated orcas: {}", sim.orca_count));
-            ui.label(format!("time: {}", sim.time));
+            ui.label(format!("time: {}s", (sim.time * 100.).round() / 100.));
             ui.add(Slider::new(&mut sim_form_state.pod_count, 0..=50).text("Pods"));
             if ui.button("Restart Simulation").clicked() {
                 run_sim_writer.send(RunSimEvent {
@@ -91,10 +91,10 @@ fn render_ui(
                     }
                     ui.label(format!("name: {}", orca.name));
                     ui.label(format!("gender: {}", orca.gender.to_string()));
-                    ui.label(format!("age: {}", orca.age));
-                    ui.label(format!("mass: {}", orca.mass));
+                    ui.label(format!("age: {} years", orca.age));
+                    ui.label(format!("mass: {} kg", orca.mass));
                     ui.label(format!("type: {}", orca.orca_type.to_string()));
-                    ui.label(format!("hunger: {}", hunger.0));
+                    ui.label(format!("hunger: {}", (hunger.0 * 100.).round() / 100.));
                 }
             }
         });

@@ -11,8 +11,9 @@ use pino_utils::enum_string;
 use crate::{
     ai::{
         hunger::{Hunger, Hungry, Hunt},
-        movement::{Movement, Sight},
+        movement::{FishNeighbouring, Movement, OrcaNeighbouring, Sight},
     },
+    fish::Fish,
     names::*,
     orca::{Gender, Orca, Pod, PodPool, Type},
 };
@@ -36,13 +37,14 @@ impl Plugin for SimPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Simulation::default())
             .add_event::<RunSimEvent>()
-            .add_system(run_sim)
+            .add_system(run_sim_orca)
+            .add_system(run_sim_fish)
             .add_system(sim_time)
             .add_system(sim_count);
     }
 }
 
-fn run_sim(
+fn run_sim_orca(
     mut cmd: Commands,
     query: Query<Entity, With<Orca>>,
     mut pod_pool: ResMut<PodPool>,
@@ -132,8 +134,12 @@ fn run_sim(
                         orca_type: pod_type.clone(),
                         pod_id: Some(pod_id),
                     })
-                    .insert(Hunger(0.99))
-                    .insert(Sight::new(20., 90.))
+                    .insert(OrcaNeighbouring::default())
+                    .insert(Hunger(thread_rng().gen_range(0.0f32..0.3f32)))
+                    .insert(Sight {
+                        view_range: 20.,
+                        view_angle: 90.,
+                    })
                     .insert(Movement {
                         coherence: 1.,
                         alignment: 1.,
@@ -153,7 +159,7 @@ fn run_sim(
                     })
                     .insert(
                         Thinker::build()
-                            .picker(FirstToScore { threshold: 0.8 })
+                            .picker(FirstToScore { threshold: 0.5 })
                             .when(Hungry, Hunt),
                     )
                     .insert_bundle(MaterialMesh2dBundle {
@@ -188,6 +194,80 @@ fn run_sim(
             }
 
             pod_pool.insert(pod_id as usize, pod);
+        }
+    }
+}
+
+fn run_sim_fish(
+    mut cmd: Commands,
+    query: Query<Entity, With<Fish>>,
+    mut events: EventReader<RunSimEvent>,
+) {
+    use std::f32::consts::PI;
+
+    use rand::{thread_rng, Rng};
+
+    for RunSimEvent {
+        pod_count,
+        pod_size,
+    } in events.iter()
+    {
+        for i in 0..=100 {
+            let id = cmd.spawn().id();
+
+            let spawn_pos = Vec2::new(
+                thread_rng().gen_range(-100..100) as f32,
+                thread_rng().gen_range(-100..100) as f32,
+            );
+
+            let rand_angle = thread_rng().gen_range(0..(360 as i32)) as f32 * PI / 180.;
+            let velocity = Mat2::from_angle(rand_angle) * Vec2::X * 10.;
+
+            cmd.entity(id)
+                .insert(Fish)
+                .insert(FishNeighbouring::default())
+                .insert_bundle(SpriteBundle {
+                    sprite: Sprite {
+                        color: Color::RED,
+                        ..default()
+                    },
+                    transform: Transform::from_translation(spawn_pos.extend(0.)),
+                    ..default()
+                })
+                .insert(Sight {
+                    view_range: 20.,
+                    view_angle: 90.,
+                })
+                .insert(Movement {
+                    coherence: 1.,
+                    alignment: 1.,
+                    seperation: 1.,
+                    randomess: 5.,
+                    tracking: 10.,
+                    wander_angle: 20,
+                    target: None,
+                    speed_scale: thread_rng().gen_range(90..110) as f32 / 10.,
+                    ..default()
+                })
+                .insert(RigidBody {
+                    max_velocity: Some(20.),
+                    velocity,
+                    mass: 1.,
+                    ..default()
+                })
+                .with_children(|parent| {
+                    parent.spawn().insert_bundle(GeometryBuilder::build_as(
+                        &RegularPolygon {
+                            sides: 4,
+                            ..default()
+                        },
+                        DrawMode::Outlined {
+                            fill_mode: FillMode::color(Color::RED),
+                            outline_mode: StrokeMode::new(Color::BLACK, 0.1),
+                        },
+                        Transform::default(),
+                    ));
+                });
         }
     }
 }
