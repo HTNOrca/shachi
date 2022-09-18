@@ -905,5 +905,36 @@ lazy_static! {
         "Salty",
         "Vast"
     ];
-    pub static ref POD_NAME_NOUN: Vec<&'static str> = vec!["Poseidon"];
+    pub static ref POD_NAME_NOUN: Vec<&'static str> = vec![
+        "Splish Splash",
+        "Tide",
+        "Intertidal Zone",
+        "Poseidon",
+        "Water",
+        "Island",
+        "Pearl",
+        "Pod",
+        "Droplet",
+        "Crash",
+        "Wave",
+        "Surf",
+        "Fin",
+        "Peepo",
+        "Streamline",
+        "Energy Grade Line",
+        "Hydraulic Grade Line",
+        "Runoff",
+        "Pressure",
+        "Stream",
+        "Current",
+        "Blue",
+        "Gang",
+        "Squad",
+        "Crew",
+        "Predator",
+        "Water",
+        "Tentacle",
+        "Atlantis",
+        "Orcinus Orca",
+    ];
 }

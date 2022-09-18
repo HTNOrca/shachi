@@ -36,14 +36,28 @@ pub struct SimFormState {
     pod_count: usize,
     pod_size_min: usize,
     pod_size_max: usize,
+
+    coherence: f32,
+    alignment: f32,
+    seperation: f32,
+    randomness: f32,
+
+    view_range: f32,
 }
 
 impl Default for SimFormState {
     fn default() -> Self {
         Self {
             pod_count: 10,
-            pod_size_min: 1,
-            pod_size_max: 6,
+            pod_size_min: 15,
+            pod_size_max: 30,
+
+            coherence: 1.,
+            alignment: 1.,
+            seperation: 1.,
+            randomness: 1.,
+
+            view_range: 50.,
         }
     }
 }
@@ -73,10 +87,28 @@ fn render_ui(
             ui.label(format!("simulated orcas: {}", sim.orca_count));
             ui.label(format!("time: {}s", (sim.time * 100.).round() / 100.));
             ui.add(Slider::new(&mut sim_form_state.pod_count, 0..=50).text("Pods"));
+            ui.add(Slider::new(&mut sim_form_state.pod_size_min, 0..=50).text("Pod Size Min"));
+            ui.add(Slider::new(&mut sim_form_state.pod_size_max, 0..=50).text("Pod Size Max"));
+            if sim_form_state.pod_size_min > sim_form_state.pod_size_max {
+                sim_form_state.pod_size_max = sim_form_state.pod_size_min;
+            }
+            ui.separator();
+            ui.add(Slider::new(&mut sim_form_state.coherence, 0.0f32..=10.).text("Coherence"));
+            ui.add(Slider::new(&mut sim_form_state.alignment, 0.0f32..=10.).text("Alignment"));
+            ui.add(Slider::new(&mut sim_form_state.seperation, 0.0f32..=10.).text("Seperation"));
+            ui.add(Slider::new(&mut sim_form_state.randomness, 0.0f32..=10.).text("Randomness"));
+            ui.add(Slider::new(&mut sim_form_state.view_range, 0.0f32..=500.).text("View Range"));
             if ui.button("Restart Simulation").clicked() {
                 run_sim_writer.send(RunSimEvent {
                     pod_count: sim_form_state.pod_count,
+                    pod_size_min: sim_form_state.pod_size_min,
+                    pod_size_max: sim_form_state.pod_size_max,
                     pod_size: 1..6,
+                    coherence: sim_form_state.coherence,
+                    alignment: sim_form_state.alignment,
+                    seperation: sim_form_state.seperation,
+                    randomness: sim_form_state.randomness,
+                    view_range: sim_form_state.view_range,
                 });
             }
 
